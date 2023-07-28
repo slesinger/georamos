@@ -1,0 +1,6 @@
+.source.txt
+*.dbg
+*.sym
+*.vs
+*.log
+georamos
