@@ -33,6 +33,7 @@ the ` key should give you a left-arrow.
 
 # TODO
 - key shortcuts pro spousteni menu
+- design UI toolkit
 - ukladani souboru (root dir, jmeno MEDLIK)
   - existuje root dir zaznam? kdyz ne, inicializuj fs
 - list dir
@@ -42,7 +43,7 @@ the ` key should give you a left-arrow.
 - install fastloader
 - load cartridge file
 - translocate
-- visual memory map
+- visual memory map 40*25=1000
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
 - .segmentdef block_fill [min=$0000, max=$3eff, fill] problem se zero page warningem, use .abs

@@ -27,5 +27,6 @@
 
 #import "block_0000.asm"
 #import "block_0001.asm"
+#import "tui.asm"
 
 

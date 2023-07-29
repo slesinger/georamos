@@ -9,6 +9,7 @@
 #endif
 
 *=$c900 "menu"
+    jsr menu_screen_init
 	lda #<message
 	ldy #>message
 	jsr $ab1e
@@ -36,6 +37,15 @@ exit_to_basic:
     jsr $ff84           // IOINIT: Initialize CIAs++
     rts
 
+
+// Upload memory to GEORAM as a file
+// filename_ptr 16 chars will be read
+// filesize_ptr
+// memaddr_ptr
+// X: <preserved>
+// Y: <preserved>
+// A: <preserved>
+// return: -
 upload_from_memory:
     lda #$00
     sta geo_copy_to_srcPtr + 1
@@ -44,7 +54,7 @@ upload_from_memory:
     ldx #$01 //geo sector
     lda #$00 //geo block
     ldy #$10 //copy $8000 - $8fff
-    jsr geo_copy_to
+    jsr geo_copy_to_geo
     inc $d020 // confirm done
     rts
 
@@ -56,7 +66,7 @@ dowload_to_memory:
     ldx #$01 //geo sector
     lda #$00 //geo block
     ldy #$10 //copy n pages
-    jsr geo_copy_from
+    jsr geo_copy_from_geo
     inc $d020 // confirm done
     rts
 
@@ -65,7 +75,6 @@ menu_dev:
     jmp menu
 
 init:
-.break
     jsr check_fs
     rts
 

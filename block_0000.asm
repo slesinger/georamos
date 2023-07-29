@@ -55,11 +55,12 @@ geo_copy_common_init:
     ldx #$00
     rts
 
+// Copy data from source memory pointer to georam
 // geo_copy_to_srcPtr + 1: source address
 // X: high byte of geo address 0-63
 // A: low byte of geo address 0-255
 // Y: number of pages to copy
-geo_copy_to:
+geo_copy_to_geo:
     jsr geo_copy_common_init
     sty j1+1
     ldy #$00
@@ -76,11 +77,12 @@ j1: cpy #$1   // is fake, it will be replaced by real number of blocks
     rts
 
 
+// Copy data from georam to target memory pointer
 // geo_copy_from_trgPtr + 1: source address
 // X: high byte of geo address 0-63
 // A: low byte of geo address 0-255
 // Y: number of blocks to copy
-geo_copy_from:
+geo_copy_from_geo:
     jsr geo_copy_common_init
     sty j2+1
     ldy #$00
@@ -108,7 +110,7 @@ bootstrap_code:
     ldx #$00 //geo sector
     lda #$01 //geo block
     ldy #$03 //copy n pages
-    jsr geo_copy_from
+    jsr geo_copy_from_geo
     jsr init
     jmp menu
 
@@ -120,6 +122,11 @@ bootstrap_code:
     jmp $de09
 
 current_dir_id: .byte $00
+filename_ptr: .word $0000  //16 chars will be read
+filesize_ptr: .word $0000
+memaddr_ptr: .word $0000
+sector_ptr: .word $0000
+block_ptr: .word $0000
 
 *=$c8ff "boot end"
 .byte $ff
