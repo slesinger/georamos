@@ -109,6 +109,7 @@ bootstrap_code:
     lda #$01 //geo block
     ldy #$03 //copy n pages
     jsr geo_copy_from
+    jsr init
     jmp menu
 
 .text "END0!"
@@ -117,6 +118,8 @@ bootstrap_code:
     jmp $de09
 *=$c8ad "Menu vector $DEAD" // helper to bootstrap with SYS $DEAD
     jmp $de09
+
+current_dir_id: .byte $00
 
 *=$c8ff "boot end"
 .byte $ff

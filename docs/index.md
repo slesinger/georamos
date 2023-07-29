@@ -33,7 +33,8 @@ the ` key should give you a left-arrow.
 
 # TODO
 - key shortcuts pro spousteni menu
-- file system design
+- ukladani souboru (root dir, jmeno MEDLIK)
+  - existuje root dir zaznam? kdyz ne, inicializuj fs
 - list dir
 - cd
 - menu pro zadavani mem addr pro upload / download

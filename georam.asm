@@ -22,7 +22,7 @@
 
 
 #if BOOTBLOCK_DEVELOPMENT
-    BasicUpstart2(menu)
+    BasicUpstart2(menu_dev)
 #endif
 
 #import "block_0000.asm"
