@@ -16,32 +16,38 @@ Then, anytime, enter GeoRAMOS menu by ```SYS 51200```.
 
 Everything else is intuitive.
 
+### Vice positional mapping
+
+The Backspace key is also INSert when you hold the Shift key.
+
+PgUp is Restore.
+
+ESC is RUN|STOP.
+
+Tab key is Control.
+
+The lower left Control key should be the C= key.
+
+the ` key should give you a left-arrow.
+
+
 # TODO
-- zkopirovat z geo vsechny bloky do c800
-- zakladni menu
-- prvni tool bude sd2iec launcher
+- key shortcuts pro spousteni menu
+- file system design
+- list dir
+- cd
+- menu pro zadavani mem addr pro upload / download
+- tool sd2iec launcher
+- install fastloader
+- load cartridge file
+- translocate
+- visual memory map
+### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
+- .segmentdef block_fill [min=$0000, max=$3eff, fill] problem se zero page warningem, use .abs
 
 
 /*
-    // switch first page of Georam
-    lda #$00
-    sta $dfff  // 16K block 0-256 for 4MB Georam
-    lda #$00
-    sta $dffe  // page 0-63
-
-    lda #$d0
-    sta $de00
-
-    // print "medlik!"
-    lda #<georam
-    ldy #>georam
-    jsr $ab1e
-
-
-    jmp -3
-
-
     lda #$00
     sta geo_copy_to_srcPtr + 1
     lda #$a0
@@ -50,16 +56,4 @@ Everything else is intuitive.
     lda #$00 //geo block
     ldy #$04 //copy n pages
     jsr geo_copy_to
-
-
-*=$de00
-georam:
-
-*=$c000 "Data"
-message:
-// .encoding "screencode_mixed"  //petscii_upper, petscii_mixed, ascii
-.encoding "screencode_upper"
-    .text "MEDLIK!"
-    .byte $00
-
 */

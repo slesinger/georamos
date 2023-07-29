@@ -1,6 +1,8 @@
 #importonce
 #import "shared.asm"
 
+// .filenamespace block_0000
+
 #if !BOOTBLOCK_DEVELOPMENT
     .segment block_0000
 #endif
@@ -37,7 +39,6 @@ georam_next:
     pla
     rts
 inc_georam_sector:
-.assert "should not be here", 2+2, 5
     lda geomem_block
     sta georam_block
     inc geomem_sector
@@ -99,7 +100,6 @@ j2: cpy #$1   // is fake, it will be replaced by real number of blocks
 // This code is executed from $c800 already after bootstrap is copied from $de00
 // Absolute jump with the code are allowed.
 bootstrap_code:
-    inc $d020
     // copy block1-4 from georam to $c900
     lda #$00
     sta geo_copy_from_trgPtr + 1
@@ -109,12 +109,14 @@ bootstrap_code:
     lda #$01 //geo block
     ldy #$03 //copy n pages
     jsr geo_copy_from
+    jmp menu
 
-    inc $d021
-!:  jmp !-
 .text "END0!"
 
 *=$c8a8 "Menu vector 57000" // helper to bootstrap with SYS 57000
     jmp $de09
 *=$c8ad "Menu vector $DEAD" // helper to bootstrap with SYS $DEAD
     jmp $de09
+
+*=$c8ff "boot end"
+.byte $ff
