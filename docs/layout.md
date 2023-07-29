@@ -50,17 +50,22 @@ Sector 01-63                : data area
 
 ## Dir table
 Total dir table size 100blocks*256bytes = 25600bytes
+Maximum directories: 64
 
 Record is fixed length (20bytes):
+- 0B  directory id is implicit by its position, needed for linking as parent directory
+- 1B  file type / parent directory id
+  - 6bits  parent directory id
+  - 2bits  file type
 - 1B  size in blocks (block=256bytes, max 256)
 - 16B filename, max 16chars, filled with blank spaces
-- 1B  file type
 - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
 - 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
 
+First 256? entries is reserved for directories.
 
 #### File types
-$00 scratched
+$00 scratched / does not exist
 $80 deleted    DEL
 $81 sequential SEQ
 $82 program    PRG
