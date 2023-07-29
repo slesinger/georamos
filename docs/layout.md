@@ -41,7 +41,7 @@ bootstrap_end:
 
 # HDD layout
 Sector 0    , block    0-26 : GeoRAMOS
-Sector 0    , blocks  27-127: Dirctory structure (100 blocks)
+Sector 0    , blocks  27-127: Directory table (100 blocks)
 Sector 0    , blocks 128-190: FAT sector pointer table (63 blocks)
 Sector 0    , blocks 191    : unused
 Sector 0    , blocks 192-254: FAT block pointer table (63 blocks)
@@ -50,7 +50,8 @@ Sector 01-63                : data area
 
 ## Dir table
 Total dir table size 100blocks*256bytes = 25600bytes
-Maximum directories: 64
+Each block holds 12 entries (20bytes/entry * 12 = 240 < 256)
+Maximum directories: 60
 
 Record is fixed length (20bytes):
 - 0B  directory id is implicit by its position, needed for linking as parent directory
@@ -62,7 +63,7 @@ Record is fixed length (20bytes):
 - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
 - 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
 
-First 64 entries is reserved for directories.
+First 5 blocks -> 60 entries is reserved for directories.
 Very first record is root directory /.
 
 #### File flags (highest 2 bits 64 and 128)
