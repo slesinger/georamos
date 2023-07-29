@@ -40,18 +40,19 @@ bootstrap_end:
 ```
 
 # HDD layout
-Sector 0    , block   0-17: GeoRAMOS
-//Sector 0    , blocks 18-26: Disk Block Availability Map (BAM)
-Sector 0    , blocks 27-127 : Dirctory structure (100 blocks)
+Sector 0    , block    0-26 : GeoRAMOS
+Sector 0    , blocks  27-127: Dirctory structure (100 blocks)
 Sector 0    , blocks 128-190: FAT sector pointer table (63 blocks)
+Sector 0    , blocks 191    : unused
 Sector 0    , blocks 192-254: FAT block pointer table (63 blocks)
-Sector 01-63              : data area
+Sector 0    , blocks 255    : unused
+Sector 01-63                : data area
 
 ## Dir table
 Total dir table size 100blocks*256bytes = 25600bytes
 
 Record is fixed length (20bytes):
-- 1B  size in blocks (block=256bytes)
+- 1B  size in blocks (block=256bytes, max 256)
 - 16B filename, max 16chars, filled with blank spaces
 - 1B  file type
 - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
