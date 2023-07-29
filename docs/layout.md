@@ -62,7 +62,8 @@ Record is fixed length (20bytes):
 - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
 - 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
 
-First 256? entries is reserved for directories.
+First 64 entries is reserved for directories.
+Very first record is root directory /.
 
 #### File flags (highest 2 bits 64 and 128)
 b00xxxxxxxx scratched / does not exist
