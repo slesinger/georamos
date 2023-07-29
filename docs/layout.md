@@ -54,9 +54,9 @@ Maximum directories: 64
 
 Record is fixed length (20bytes):
 - 0B  directory id is implicit by its position, needed for linking as parent directory
-- 1B  file type / parent directory id
+- 1B  file flags / parent directory id
   - 6bits  parent directory id
-  - 2bits  file type
+  - 2bits  file flags
 - 1B  size in blocks (block=256bytes, max 256)
 - 16B filename, max 16chars, filled with blank spaces
 - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
@@ -64,14 +64,11 @@ Record is fixed length (20bytes):
 
 First 256? entries is reserved for directories.
 
-#### File types
-$00 scratched / does not exist
-$80 deleted    DEL
-$81 sequential SEQ
-$82 program    PRG
-$83 user       USR
-$84 relative   REL
-$FF directory  DIR
+#### File flags (highest 2 bits 64 and 128)
+b00xxxxxxxx scratched / does not exist
+b01xxxxxxxx directory  DIR
+b10xxxxxxxx file PRG
+b11xxxxxxxx file SEQ
 > See 4.4. http://www.devili.iki.fi/pub/Commodore/docs/books/Inside_Commodore_DOS_OCR.pdf
 
 
