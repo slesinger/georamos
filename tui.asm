@@ -34,23 +34,15 @@ menu_line_render:
     sta $f5
     lda #>menu_line_meta
     sta $f6
-	lda #<menu_line_char_data  // chars from
-	sta r_src_char + 1
-	lda #>menu_line_char_data
-	sta r_src_char + 2
-	lda #<menu_line_color_data  // color from
-	sta r_src_color + 1
-	lda #>menu_line_color_data
-	sta r_src_color + 2
     jsr render
     rts
 
 
 // Copies rectangle from source buffer to destination buffer
 // render_source_meta: pointer source buffer structure metainformation:
-//   width, height, targetCharPtr, targetColorPtr (influence position on screen)
-// $f9+$fa pointer to source color data
-// $fb+$fc pointer to source character data
+//   width, height, 
+//   sourceCharPtr, targetCharPtr, 
+//   sourceColorPtr, targetColorPtr
 // $f5-$f6 render_source_meta_ptr
 // X: <destroyed>
 // Y: <destroyed>
@@ -58,7 +50,6 @@ menu_line_render:
 // return: -
 render:
     cld
-.break
     ldy #$00
     lda ($f5),y  // width
     sta r_width + 1
@@ -66,11 +57,23 @@ render:
     lda ($f5),y  // height
     sta r_height + 1
     iny
+	lda ($f5),y  // chars from
+	sta r_src_char + 1
+    iny
+	lda ($f5),y
+	sta r_src_char + 2
+    iny
 	lda ($f5),y  // chars target $0400 + position
 	sta r_trg_char + 1
     iny
 	lda ($f5),y
 	sta r_trg_char + 2
+    iny
+	lda ($f5),y  // color from
+	sta r_src_color + 1
+    iny
+	lda ($f5),y
+	sta r_src_color + 2
     iny
 	lda ($f5),y  // color target $d800 + position
 	sta r_trg_color + 1
@@ -118,7 +121,7 @@ r_trg_color:
     bcc !+
     inc r_trg_char + 2
 !:
-    lda #40 -1  // screen width - 1
+    lda #40 - 1  // screen width - 1
     sbc r_width + 1  // - width
     adc r_trg_color + 1
     sta r_trg_color + 1
@@ -136,8 +139,10 @@ r_trg_color:
 
 menu_line_meta:
     .byte   20, 4  // width, height
-    .word   $0400 
-    .word   $d800 
+    .word   menu_line_char_data  // sourceCharPtr
+    .word   $0400  // targetCharPtr
+    .word   menu_line_color_data  // sourceColorPtr
+    .word   $d800  // targetColorPtr
 menu_line_char_data:  // 20 per ass line
 	.byte	$8C, $C5, $C6, $D4, $E0, $86, $C9, $CC, $C5, $E0, $83, $CF, $CD, $CD, $C1, $CE, $C4, $E0, $8F, $D0, $D4, $C9, $CF, $CE, $D3, $E0, $92, $C9, $C7, $C8, $D4, $E0, $E0, $E0, $C6, $F1, $F6, $F1, $F2, $F8
 	.byte	$2B, $13, $3A, $2F, $04, $05, $16, $14, $0F, $0F, $0C, $13, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B, $2B, $07, $3A, $2F, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
