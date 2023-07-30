@@ -9,25 +9,223 @@
 #endif
 
 *=$c900 "menu"
-    jsr menu_screen_init
-	lda #<message
-	ldy #>message
-	jsr $ab1e
-!:  jsr $ffe4           // GETIN: Wait for keypress
-    beq !-
+    jsr menu_screen_init  // all registers destroyed
 
-    cmp #$5f            // left arrow escape - exit to basic
-    beq exit_to_basic
-    cmp #$55            // u
+read_key:
+    jsr GETIN           // non-blockin read key
+    beq read_key
+    cmp #$31            // 1
+    beq help
+    cmp #$32            // 2
     beq upload_from_memory
-    cmp #$44            // d
+    cmp #$33            // 3
     beq dowload_to_memory
-!:  inc $d021
-    jmp !-
-    
+    cmp #$35            // 5
+    beq copy_file
+    cmp #$36            // 6
+    beq move_file
+    cmp #$37            // 7
+    beq create_dir
+    cmp #$38            // 8
+    beq delete_file
+    cmp #$39            // 9
+    beq menu_drop
+    cmp #$30            // 0
+    beq exit_to_basic
+    cmp #$91            // up arrow
+    beq arrow_up_handler
+    cmp #$11            // down arrow
+    beq arrow_down_handler
+    cmp #$1d            // right arrow
+    beq arrow_right_handler
+    cmp #$9d            // left arrow
+    beq arrow_left_handler
+    cmp #$5f            // arrow left to escape  
+    beq escape_handler
+    cmp #$8d            // shift + return as tab, next input
+    beq next_input_handler
+    cmp #$0d            // shift + return as tab, next input PRECHODNE
+    beq next_input_handler
+    jmp read_key
+
+help:
+    inc $d021
+    jmp read_key
+
+upload_from_memory:
+    jsr upload_from_memory_impl
+    jmp read_key
+
+dowload_to_memory:
+    jsr dowload_to_memory_impl
+    jmp read_key
+
+copy_file:
+    inc $d021
+    jmp read_key
+
+move_file:
+    inc $d021
+    jmp read_key
+
+create_dir:
+    inc $d021
+    jmp read_key
+
+delete_file:
+    inc $d021
+    jmp read_key
+
+menu_drop:
+    inc $d021
+    jmp read_key
+
+exit_to_basic:
+    jmp exit_to_basic_impl
+
+arrow_up_handler:
+    inc $d021
+    jmp read_key
+
+arrow_down_handler:
+    inc $d021
+    jmp read_key
+
+arrow_right_handler:
+    inc $d021
+    jmp read_key
+
+arrow_left_handler:
+    inc $d021
+    jmp read_key
+
+escape_handler:
+    inc $d021
+    jmp read_key
+
+next_input_handler:
+    // if state is upload from, then activate upload to
+    lda current_state
+    cmp #state_upld_from
+    beq activate_upld_to
+    // if state is upload to, then activate upload file
+    cmp #state_upld_to
+    beq activate_upld_file
+    // if state is upload file, then activate upload type
+    cmp #state_upld_file
+    beq activate_upld_type
+    // if state is upload type, then activate upload from
+    cmp #state_upld_type
+    beq activate_upld_from
+    // if state is left panel, then activate right panel
+    cmp #state_left_panel
+    beq activate_right_panel
+    // if state is right panel, then activate left panel
+    cmp #state_right_panel
+    beq activate_left_panel
+    jmp read_key
+
+
+activate_left_panel:
+    jsr activate_left_panel_func
+    jmp read_key
+
+activate_right_panel:
+    pha
+    lda #state_right_panel
+    sta current_state
+    jsr panel_content_right_render
+    // TODO render cursor
+    pla
+    jmp read_key
+
+// Toggle background color from bg2 to bg3 or back
+activate_upld_from:
+    jsr activate_upld_from_func
+    jmp read_key
+
+activate_upld_from_func:
+    lda #state_upld_from
+    sta current_state
+    lda #input_upld_from_lo
+    sta $f5
+    lda #input_upld_from_hi
+    sta $f6
+    lda #input_upld_from_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    rts
+
+activate_upld_to:
+    lda #state_upld_to
+    sta current_state
+    lda #input_upld_to_lo
+    sta $f5
+    lda #input_upld_to_hi
+    sta $f6
+    lda #input_upld_from_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    jmp read_key
+
+activate_upld_file:
+    lda #state_upld_file
+    sta current_state
+    lda #input_upld_file_lo
+    sta $f5
+    lda #input_upld_file_hi
+    sta $f6
+    lda #input_upld_file_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    jmp read_key
+
+activate_upld_type:
+    lda #state_upld_type
+    sta current_state
+    lda #input_upld_type_lo
+    sta $f5
+    lda #input_upld_type_hi
+    sta $f6
+    lda #input_upld_type_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    jmp read_key
+
+
+// Change background color from bg2 to bg3
+// $f5, $f6: vector of char memory
+// activate_input_field_len+1: length of input field
+// X: <untouched>
+// Y: <preserved>
+// A: <preserved>
+// return: -
+activate_input_field:
+    pha
+    tya
+    pha
+    ldy #$00
+!:  lda ($f5),y
+    eor #%11000000
+    sta ($f5),y
+    iny
+activate_input_field_len:
+    cpy #input_upld_from_len  // updated real time
+    bne !-
+    pla
+    tay
+    pla
+    rts
+
+activate_left_panel_func:
+    lda #state_left_panel
+    sta current_state
+    jsr panel_content_left_render
+    // TODO render cursor
+    rts
 
 // use jmp instead of jsr
-exit_to_basic:
+exit_to_basic_impl:
     sei
     lda #$37
     sta $01             // Enable KERNAL and BASIC
@@ -46,19 +244,21 @@ exit_to_basic:
 // Y: <preserved>
 // A: <preserved>
 // return: -
-upload_from_memory:
-    lda #$00
-    sta geo_copy_to_srcPtr + 1
-    lda #$80
-    sta geo_copy_to_srcPtr + 2
-    ldx #$01 //geo sector
-    lda #$00 //geo block
-    ldy #$10 //copy $8000 - $8fff
-    jsr geo_copy_to_geo
-    inc $d020 // confirm done
+upload_from_memory_impl:
+    jsr input_line_upld_render
+    jsr activate_upld_from_func
+    // lda #$00
+    // sta geo_copy_to_srcPtr + 1
+    // lda #$80
+    // sta geo_copy_to_srcPtr + 2
+    // ldx #$01 //geo sector
+    // lda #$00 //geo block
+    // ldy #$10 //copy $8000 - $8fff
+    // jsr geo_copy_to_geo
+    // inc $d020 // confirm done
     rts
 
-dowload_to_memory:
+dowload_to_memory_impl:
     lda #$00
     sta geo_copy_from_trgPtr + 1
     lda #$80
@@ -70,12 +270,18 @@ dowload_to_memory:
     inc $d020 // confirm done
     rts
 
-menu_dev:
+menu_dev:      // called after running from vs code to skip download from GeoRAM
     jsr init
     jmp menu
 
+// Main GeoRAMOS initialization
+// X: <preserved>
+// Y: <untouched>
+// A: <preserved>
+// return: -
 init:
     jsr check_fs
+    jsr activate_left_panel_func  // start with cursor in left panel
     rts
 
 // Check if GEORAM is present TODO
@@ -208,6 +414,15 @@ format_fs:
     pla
     rts
 
+
+// State of the program
+.watch current_state
+current_state: .byte $00
+left_panel_cursor_pos: .byte $00
+right_panel_cursor_pos: .byte $00
+current_dir_id: .byte $00
+filename_ptr: .word $0000  //16 chars will be read
+filesize_ptr: .word $0000
 
 
 message:

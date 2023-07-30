@@ -8,14 +8,14 @@ northon commander style
 bottom line display options
 
 #### Widgets
-menuline
+menu_line
 menudrop
-panelheader
-panelborder
-panelfooter
+panel_header
+panel_vertical
+panel_footer
 panel items[] from entries[](position)
-input line static template + inputs[]
-actions line
+input_line static template + inputs[]
+actions_line
 
 #### Methods
 render(x, y, width, height)

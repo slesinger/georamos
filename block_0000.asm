@@ -121,9 +121,6 @@ bootstrap_code:
 *=$c8ad "Menu vector $DEAD" // helper to bootstrap with SYS $DEAD
     jmp $de09
 
-current_dir_id: .byte $00
-filename_ptr: .word $0000  //16 chars will be read
-filesize_ptr: .word $0000
 memaddr_ptr: .word $0000
 sector_ptr: .word $0000
 block_ptr: .word $0000

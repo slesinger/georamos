@@ -14,7 +14,21 @@ After poweroff, first, do bootstrap by ```SYS 57000``` ($DEA8) or ```SYS $DEAD``
 
 Then, anytime, enter GeoRAMOS menu by ```SYS 51200```.
 
-Everything else is intuitive.
+## Key bindings
+1    Help
+2    Upload memory area to GeoRAM file
+3    Download GeoRAM file to memory
+5    Copy file
+6    Move file
+7    Create a new directory
+8    Delete file or directoru under cursor
+9    Menu
+0    Exit to Basic
+Cursor up and down: Move cursor
+SHIFT+RETURN: Skip to next panel or input
+Aarrow left: escape from input
+
+
 
 ### Vice positional mapping
 
