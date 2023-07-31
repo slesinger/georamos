@@ -107,41 +107,54 @@ next_input_handler:
     // if state is upload from, then activate upload to
     lda current_state
     cmp #state_upld_from
-    beq activate_upld_to
+    beq toggle_upld_to
     // if state is upload to, then activate upload file
     cmp #state_upld_to
-    beq activate_upld_file
+    beq toggle_upld_file
     // if state is upload file, then activate upload type
     cmp #state_upld_file
-    beq activate_upld_type
+    beq toggle_upld_type
     // if state is upload type, then activate upload from
     cmp #state_upld_type
-    beq activate_upld_from
+    beq toggle_upld_from
     // if state is left panel, then activate right panel
     cmp #state_left_panel
-    beq activate_right_panel
+    beq toggle_right_panel
     // if state is right panel, then activate left panel
     cmp #state_right_panel
-    beq activate_left_panel
+    beq toggle_left_panel
     jmp read_key
 
 
-activate_left_panel:
+// Toggle background color from bg2 to bg3 or back
+toggle_left_panel:
+    jsr activate_right_panel_func
     jsr activate_left_panel_func
     jmp read_key
 
-activate_right_panel:
-    pha
-    lda #state_right_panel
-    sta current_state
-    jsr panel_content_right_render
-    // TODO render cursor
-    pla
+toggle_right_panel:
+    jsr activate_left_panel_func
+    jsr activate_right_panel_func
     jmp read_key
 
-// Toggle background color from bg2 to bg3 or back
-activate_upld_from:
+toggle_upld_from:
+    jsr activate_upld_type_func
     jsr activate_upld_from_func
+    jmp read_key
+
+toggle_upld_to:
+    jsr activate_upld_from_func
+    jsr activate_upld_to_func
+    jmp read_key
+
+toggle_upld_file:
+    jsr activate_upld_to_func
+    jsr activate_upld_file_func
+    jmp read_key
+
+toggle_upld_type:
+    jsr activate_upld_file_func
+    jsr activate_upld_type_func
     jmp read_key
 
 activate_upld_from_func:
@@ -156,7 +169,7 @@ activate_upld_from_func:
     jsr activate_input_field
     rts
 
-activate_upld_to:
+activate_upld_to_func:
     lda #state_upld_to
     sta current_state
     lda #input_upld_to_lo
@@ -166,9 +179,9 @@ activate_upld_to:
     lda #input_upld_from_len
     sta activate_input_field_len + 1
     jsr activate_input_field
-    jmp read_key
+    rts
 
-activate_upld_file:
+activate_upld_file_func:
     lda #state_upld_file
     sta current_state
     lda #input_upld_file_lo
@@ -178,9 +191,9 @@ activate_upld_file:
     lda #input_upld_file_len
     sta activate_input_field_len + 1
     jsr activate_input_field
-    jmp read_key
+    rts
 
-activate_upld_type:
+activate_upld_type_func:
     lda #state_upld_type
     sta current_state
     lda #input_upld_type_lo
@@ -190,7 +203,8 @@ activate_upld_type:
     lda #input_upld_type_len
     sta activate_input_field_len + 1
     jsr activate_input_field
-    jmp read_key
+    rts
+
 
 
 // Change background color from bg2 to bg3
@@ -220,8 +234,64 @@ activate_input_field_len:
 activate_left_panel_func:
     lda #state_left_panel
     sta current_state
-    jsr panel_content_left_render
+    lda #$28  // outline left panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$01  // white
+    jsr activate_panel_horizontal_border
+    lda #$3c  // outline right panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$0e  // light blue
+    jsr activate_panel_horizontal_border
+
+    // jsr panel_content_left_render
     // TODO render cursor
+    rts
+
+activate_right_panel_func:
+    lda #state_right_panel
+    sta current_state
+    lda #$28  // outline left panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$0e  // light blue
+    jsr activate_panel_horizontal_border
+    lda #$3c  // outline right panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$01  // white
+    jsr activate_panel_horizontal_border
+    // jsr panel_content_right_render
+    // TODO render cursor
+    rts
+
+// Change background color from bg2 to bg3
+// $f5, $f6: vector of char memory
+// activate_panel_horizontal_border_len+1: length of input field
+// X: <untouched>
+// Y: <destroyed>
+// A: text color
+// return: -
+activate_panel_horizontal_border:
+    ldy #$00
+!:  sta ($f5),y
+    iny
+activate_panel_horizontal_border_len:
+    cpy #input_upld_from_len  // updated real time
+    bne !-
     rts
 
 // use jmp instead of jsr
@@ -416,7 +486,6 @@ format_fs:
 
 
 // State of the program
-.watch current_state
 current_state: .byte $00
 left_panel_cursor_pos: .byte $00
 right_panel_cursor_pos: .byte $00
