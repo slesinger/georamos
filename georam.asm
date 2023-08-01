@@ -1,4 +1,4 @@
-#define BOOTBLOCK_DEVELOPMENT  // it will be executed at $c800 instead of assembled to file
+#define BOOTBLOCK_DEVELOPMENT  // it will be executed at $c000 instead of assembled to file
 
 
 
@@ -28,5 +28,6 @@
 #import "block_0000.asm"
 #import "block_0001.asm"
 #import "tui.asm"
+#import "fs.asm"
 
 

@@ -1,6 +1,11 @@
 #importonce
 
+
 // Memory
+.const page00 = $c000
+.const page00_end = $c0ff
+.const page01 = $c100
+.const page01_hi = $c1
 .const default_screen_memory = $0400
 .const default_screen_memory_lo = $00
 .const default_screen_memory_hi = $04
@@ -8,22 +13,10 @@
 .const default_color_memory_lo = $00
 .const default_color_memory_hi = $d8
 .const pagemem = $de00
-.const bootstrap = $c800
-.const menu = $c900
+.const bootstrap = page00
+.const menu = page01
 .var georam_sector = $dffe  // 0-63, always store to geomem_sector, because it is not possible read from this address
 .var georam_block = $dfff  // 0-255, always store to geomem_block, because it is not possible read from this address
-
-.const input_upld_from_lo = $9e
-.const input_upld_from_hi = $07
-.const input_upld_from_len = $04
-.const input_upld_to_lo = $a3
-.const input_upld_to_hi = $07
-.const input_upld_file_lo = $ac
-.const input_upld_file_hi = $07
-.const input_upld_file_len = $10
-.const input_upld_type_lo = $bd
-.const input_upld_type_hi = $07
-.const input_upld_type_len = $03
 
 // Kernal
 .const SCNKEY = $FF9F

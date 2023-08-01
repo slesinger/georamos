@@ -41,16 +41,18 @@ menu_screen_init:
     jsr panel_content_right_render
     rts
 
-// Copies rectangle from source buffer to destination buffer
-// render_source_meta: pointer source buffer structure metainformation:
-//   width, height, 
-//   sourceCharPtr, targetCharPtr, 
-//   sourceColorPtr, targetColorPtr
-// $f5-$f6 render_source_meta_ptr
-// X: <destroyed>
-// Y: <destroyed>
-// A: <destroyed>
-// return: -
+/*
+Copies rectangle from source buffer to destination buffer
+render_source_meta: pointer source buffer structure metainformation:
+  width, height, 
+  sourceCharPtr, targetCharPtr, 
+  sourceColorPtr, targetColorPtr
+$f5-$f6 render_source_meta_ptr
+X: <destroyed>
+Y: <destroyed>
+A: <destroyed>
+return: -
+*/
 render:
     cld
     ldy #$00
@@ -284,6 +286,309 @@ actions_line_render:
     rts
 
 
+activate_upld_from_func:
+    lda #state_upld_from
+    sta current_state
+    lda #input_upld_from_lo
+    sta $f5
+    lda #input_upld_from_hi
+    sta $f6
+    lda #input_upld_from_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    rts
+
+activate_upld_to_func:
+    lda #state_upld_to
+    sta current_state
+    lda #input_upld_to_lo
+    sta $f5
+    lda #input_upld_to_hi
+    sta $f6
+    lda #input_upld_from_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    rts
+
+activate_upld_file_func:
+    lda #state_upld_file
+    sta current_state
+    lda #input_upld_file_lo
+    sta $f5
+    lda #input_upld_file_hi
+    sta $f6
+    lda #input_upld_file_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    rts
+
+activate_upld_type_func:
+    lda #state_upld_type
+    sta current_state
+    lda #input_upld_type_lo
+    sta $f5
+    lda #input_upld_type_hi
+    sta $f6
+    lda #input_upld_type_len
+    sta activate_input_field_len + 1
+    jsr activate_input_field
+    rts
+
+
+
+/*
+Change background color from bg2 to bg3
+$f5, $f6: vector of char memory in $0400
+activate_input_field_len+1: length of input field
+X: <untouched>
+Y: <preserved>
+A: <preserved>
+return: -
+*/
+activate_input_field:
+    pha
+    tya
+    pha
+    ldy #$00
+!:  lda ($f5),y
+    eor #%11000000
+    sta ($f5),y
+    iny
+activate_input_field_len:
+    cpy #input_upld_from_len  // updated real time
+    bne !-
+    pla
+    tay
+    pla
+    rts
+
+/*
+Enter GETIN loop, set cursor position, handle arrow keys, excape, enter for next field
+$f5, $f6: vector of char memory
+activate_input_field_len+1: length of input field
+X: <?>
+Y: <?>
+A: return
+return: A: 0: escape, 1: enter
+*/
+focus_input_field:
+    // set cursor  (by adding $80)
+    // activate this
+    // deactivate others
+    // read keys and dispatch
+input_read_key:
+    jsr GETIN           // non-blockin read key
+    beq input_read_key
+    cmp #$1d            // right arrow
+    beq input_arrow_right_handler
+    cmp #$9d            // left arrow
+    beq input_arrow_left_handler
+    cmp #$5f            // arrow left to escape  
+    beq input_escape_handler
+    cmp #$0d            // enter to commit form
+    beq input_enter_handler
+    cmp #$20            // low boundary for accpeted keys
+    bcc input_read_key  // if lower then jump
+    cmp #$5f            // high boundary for accpeted keys
+    bcc input_letter_handler  // if within range then jump
+    jmp input_read_key
+input_escape_handler:
+    jsr input_line_empty_render
+    jsr activate_left_panel_func
+    lda #$00
+    rts
+input_enter_handler:
+    jsr input_line_empty_render
+    jsr activate_left_panel_func
+    lda #$01
+    rts
+input_arrow_left_handler:
+    inc $d020
+    jmp input_read_key
+input_arrow_right_handler:
+    dec $d020
+    jmp input_read_key
+input_letter_handler:
+    jsr load_current_input_field_vector
+    jsr input_letter_handler_impl
+    jmp input_read_key
+
+
+/*
+Based on current state, resolve input field vector metadata and load to $f5/$f6
+State must be in one of input field states. Not validated.
+return: $f5, $f6: vector of input field metadata
+*/
+load_current_input_field_vector:
+    pha
+    lda current_state
+    cmp #state_upld_from
+    bne !+
+    lda #<input_field_upld_from
+    sta $f5
+    lda #>input_field_upld_from
+    sta $f6
+    jmp load_current_input_field_vector_end
+!:  cmp #state_upld_to
+    bne !+
+    lda #<input_field_upld_to
+    sta $f5
+    lda #>input_field_upld_to
+    sta $f6
+    jmp load_current_input_field_vector_end
+
+!:  cmp #state_upld_file
+    bne !+
+    lda #<input_field_upld_file
+    sta $f5
+    lda #>input_field_upld_file
+    sta $f6
+    jmp load_current_input_field_vector_end
+!:  cmp #state_upld_type
+    bne !+
+    lda #<input_field_upld_type
+    sta $f5
+    lda #>input_field_upld_type
+    sta $f6
+    jmp load_current_input_field_vector_end
+load_current_input_field_vector_end:
+    pla
+    rts
+
+/*
+Write A to screen, to input field buffer, validate input, may skip to next input field
+$f5, $f6: vector of input field metadata
+A: input character from keypress
+return: -
+*/
+input_letter_handler_impl:
+    // prepare char memory pointer
+    pha
+    ldy #16
+    lda ($f5), y  // get lo nibble of char memory
+    sta !+ + 1
+    iny
+    lda ($f5), y  // get hi nibble of char memory
+    sta !+ + 2
+    ldy #18  // cursor position pointer
+    lda ($f5), y  // get cursor position
+    tay
+    pla
+    and #%00111111  // pure letters
+    sta ($f5), y  // write input char to input field data
+    ora #%10000000  // white background
+!:  sta $ffff, y  // write input char to char memory
+    iny
+    tya  // a = current cursor position
+    ldy #19  // input field length
+    cmp ($f5), y  // compare with input field length
+    beq !+  // if cursor position is equal the length then skip to next input field
+    ldy #18  // cursor position pointer
+    sta ($f5), y  // write cursor position
+    jmp ilhi_end
+!:  ldy #18  // cursor position pointer
+    lda #00  // reset cursor position
+    sta ($f5), y  // write cursor position
+.break
+
+ilhi_end:
+    rts
+
+
+input_fields:
+input_field_upld_from:  // metadata
+    .fill 16, $20  // buffer for data with spaces         +0
+    .word $079e  // pointer to char memory within $0400   +16
+    .byte 00  // cursor position within field             +18
+    .byte 4  // length of input field                     +19
+    .word input_field_upld_to  // pointer to next input field metadata   +20
+input_field_upld_to:  // metadata
+    .fill 16, $20  // buffer for data with spaces
+    .word $07a3  // pointer to char memory within $0400
+    .byte 00  // cursor position within field
+    .byte 4  // length of input field
+    .word input_field_upld_file  // pointer to next input field metadata
+input_field_upld_file:  // metadata
+    .fill 16, $20  // buffer for data with spaces
+    .word $07ac  // pointer to char memory within $0400
+    .byte 00  // cursor position within field
+    .byte 16  // length of input field
+    .word input_field_upld_type  // pointer to next input field metadata
+input_field_upld_type:  // metadata
+    .fill 16, $20  // buffer for data with spaces
+    .word $07bd  // pointer to char memory within $0400
+    .byte 00  // cursor position within field
+    .byte 3  // length of input field
+    .word input_field_upld_from  // pointer to next input field metadata
+
+
+activate_left_panel_func:
+    lda #state_left_panel
+    sta current_state
+    lda #$28  // outline left panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$01  // white
+    jsr activate_panel_horizontal_border
+    lda #$3c  // outline right panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$0e  // light blue
+    jsr activate_panel_horizontal_border
+
+    // jsr panel_content_left_render
+    // TODO render cursor
+    rts
+
+activate_right_panel_func:
+    lda #state_right_panel
+    sta current_state
+    lda #$28  // outline left panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$0e  // light blue
+    jsr activate_panel_horizontal_border
+    lda #$3c  // outline right panel
+    sta $f5
+    lda #$d8
+    sta $f6
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$01  // white
+    jsr activate_panel_horizontal_border
+    // jsr panel_content_right_render
+    // TODO render cursor
+    rts
+
+/*
+Change background color from bg2 to bg3
+$f5, $f6: vector of char memory
+activate_panel_horizontal_border_len+1: length of input field
+X: <untouched>
+Y: <destroyed>
+A: text color
+return: -
+*/
+activate_panel_horizontal_border:
+    ldy #$00
+!:  sta ($f5),y
+    iny
+activate_panel_horizontal_border_len:
+    cpy #input_upld_from_len  // updated real time
+    bne !-
+    rts
+
+
+//~~~~~~~~~~ Screens ~~~~~~~~~~~~~~~
 
 menu_line_meta:
     .byte   40, 1  // width, height
@@ -352,58 +657,3 @@ actions_line_color_data:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
 
-// screen character data
-*=$2800
-	.byte	$8C, $C5, $C6, $D4, $E0, $86, $C9, $CC, $C5, $E0, $83, $CF, $CD, $CD, $C1, $CE, $C4, $E0, $8F, $D0, $D4, $C9, $CF, $CE, $D3, $E0, $92, $C9, $C7, $C8, $D4, $E0, $E0, $E0, $C6, $F1, $F6, $F1, $F2, $F8
-	.byte	$2B, $13, $3A, $2F, $04, $05, $16, $14, $0F, $0F, $0C, $13, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B, $2B, $07, $3A, $2F, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
-	.byte	$21, $14, $01, $13, $0D, $20, $37, $2E, $31, $20, $20, $20, $20, $20, $20, $20, $20, $20, $10, $21, $21, $2E, $2E, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $04, $21
-	.byte	$21, $06, $02, $36, $34, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $10, $21, $21, $01, $13, $05, $0C, $05, $03, $14, $05, $04, $20, $06, $09, $0C, $05, $20, $20, $20, $10, $21
-	.byte	$21, $0D, $09, $03, $12, $0F, $0D, $0F, $0E, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $01, $0E, $0E, $14, $08, $05, $12, $20, $04, $05, $0D, $0F, $20, $20, $20, $20, $20, $10, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $C4, $C1, $D4, $C1, $E0, $C6, $C9, $CC, $C5, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $D3, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $86, $89, $8C, $85, $A0, $83, $95, $92, $93, $8F, $92, $A0, $A0, $A0, $A0, $A0, $A0, $90, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $19, $05, $14, $20, $01, $0E, $0F, $14, $08, $05, $12, $20, $04, $01, $14, $01, $20, $13, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $38, $3A, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $39, $3A, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $14, $0F, $0F, $0C, $13, $20, $0D, $05, $0E, $15, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $0D, $05, $0D, $0F, $12, $19, $20, $0D, $01, $10, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21, $21, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $21
-	.byte	$2B, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B, $2B, $02, $31, $32, $33, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $13, $33, $32, $37, $36, $38, $2B
-	.byte	$15, $10, $0C, $04, $20, $24, $60, $60, $60, $60, $2D, $60, $60, $60, $60, $20, $0E, $01, $0D, $05, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $20, $50, $52, $47
-	.byte	$B1, $C8, $C5, $CC, $D0, $E0, $B2, $D5, $D0, $CC, $C4, $E0, $B3, $C4, $CE, $CC, $C4, $E0, $B5, $C3, $CF, $D0, $D9, $E0, $B6, $CD, $CF, $D6, $C5, $E0, $B7, $CE, $C4, $C9, $D2, $E0, $B8, $C4, $C5, $CC
-
-// screen color data
-*=$2be8
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E

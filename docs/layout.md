@@ -21,20 +21,20 @@
 
 ## Boot block
 
-Boot block (block 0) contains code that copies bootstrapping code to botstrap address $C800 (51200).
+Boot block (block 0) contains code that copies bootstrapping code to botstrap address $C000.
 
-Bootstrapping code will control what block is paged into IO1 memory space. Bootstrap will page all other blocks that form GeoRAMOS and copies them to $C900
+Bootstrapping code will control what block is paged into IO1 memory space. Bootstrap will page all other blocks that form GeoRAMOS and copies them to $C100
 
 ### Zero block schema
 
 ```
 copy_bootstrap:  (=$00)
-    copy bootstrap_code > $c800, until bootstrap_end is reached
-    jump to $c800
+    copy bootstrap_code > $c000, until bootstrap_end is reached
+    jump to $c000
 
 bootstrap_code:
     page in block 1 -7
-    copy to $c900 - $cf00
+    copy to $c100 - $cf00
     jmp $cb20  (52000)
 bootstrap_end:
 ```

@@ -6,15 +6,15 @@
 #if !BOOTBLOCK_DEVELOPMENT
     .segment block_0000
 #endif
-// This must be target execution address in spite it will be copied from page 0 to $c800
-*=$c800 "copy_bootstrap" // good for entering GeoRAMOS menu by SYS 51200
+// This must be target execution address in spite it will be copied from page 0 to $c000
+*=page00 "copy_bootstrap" // good for entering GeoRAMOS menu by SYS 51200
     jmp menu
 
 .text "MEDLIK"  // magic and more magic
 
 copy_bootstrap:
 
-// This code will be finally executed from $de00 (inspite assembled for $c800). 
+// This code will be finally executed from $de00 (inspite assembled for $c000). 
 // Hence absolute jump with the code are allowed.
 
     ldx #$00
@@ -99,13 +99,13 @@ j2: cpy #$1   // is fake, it will be replaced by real number of blocks
     rts
 
 
-// This code is executed from $c800 already after bootstrap is copied from $de00
+// This code is executed from $c000 already after bootstrap is copied from $de00
 // Absolute jump with the code are allowed.
 bootstrap_code:
-    // copy block1-4 from georam to $c900
+    // copy block1-4 from georam to $c100
     lda #$00
     sta geo_copy_from_trgPtr + 1
-    lda #$c9
+    lda #page01_hi
     sta geo_copy_from_trgPtr + 2
     ldx #$00 //geo sector
     lda #$01 //geo block
@@ -116,14 +116,14 @@ bootstrap_code:
 
 .text "END0!"
 
-*=$c8a8 "Menu vector 57000" // helper to bootstrap with SYS 57000
-    jmp $de09
-*=$c8ad "Menu vector $DEAD" // helper to bootstrap with SYS $DEAD
-    jmp $de09
+// *=$c8a8 "Menu vector 57000" // helper to bootstrap with SYS 57000
+//     jmp $de09
+// *=$c8ad "Menu vector $DEAD" // helper to bootstrap with SYS $DEAD
+//     jmp $de09
 
 memaddr_ptr: .word $0000
 sector_ptr: .word $0000
 block_ptr: .word $0000
 
-*=$c8ff "boot end"
+*=page00_end "boot end"
 .byte $ff
