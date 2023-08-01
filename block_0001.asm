@@ -105,57 +105,22 @@ escape_handler:
     jmp read_key
 
 next_input_handler:
-    // if state is upload from, then activate upload to
     lda current_state
-    cmp #state_upld_from
-    beq toggle_upld_to
-    // if state is upload to, then activate upload file
-    cmp #state_upld_to
-    beq toggle_upld_file
-    // if state is upload file, then activate upload type
-    cmp #state_upld_file
-    beq toggle_upld_type
-    // if state is upload type, then activate upload from
-    cmp #state_upld_type
-    beq toggle_upld_from
-    // if state is left panel, then activate right panel
-    cmp #state_left_panel
-    beq toggle_right_panel
+!:  cmp #state_left_panel
+    bne !+
+    jsr load_current_input_field_vector
+    jsr deactivate_input_field
+    lda #state_upld_to  // new input field
+    sta current_state
+    jsr focus_input_field
     // if state is right panel, then activate left panel
-    cmp #state_right_panel
-    beq toggle_left_panel
-    jmp read_key
-
-
-// Toggle background color from bg2 to bg3 or back
-toggle_left_panel:
-    jsr activate_right_panel_func
-    jsr activate_left_panel_func
-    jmp read_key
-
-toggle_right_panel:
-    jsr activate_left_panel_func
-    jsr activate_right_panel_func
-    jmp read_key
-
-toggle_upld_from:
-    jsr activate_upld_type_func
-    jsr activate_upld_from_func
-    jmp read_key
-
-toggle_upld_to:
-    jsr activate_upld_from_func
-    jsr activate_upld_to_func
-    jmp read_key
-
-toggle_upld_file:
-    jsr activate_upld_to_func
-    jsr activate_upld_file_func
-    jmp read_key
-
-toggle_upld_type:
-    jsr activate_upld_file_func
-    jsr activate_upld_type_func
+!:  cmp #state_right_panel
+    bne !+
+    jsr load_current_input_field_vector
+    jsr deactivate_input_field
+    lda #state_upld_to  // new input field
+    sta current_state
+    jsr focus_input_field
     jmp read_key
 
 
@@ -181,8 +146,18 @@ exit_to_basic_impl:
 // return: -
 upload_from_memory_impl:
     jsr input_line_upld_render
-    jsr activate_upld_from_func
+    lda #state_upld_from
+    sta current_state
     jsr focus_input_field
+    cmp #$00
+    bne !+
+    jsr input_line_empty_render
+    jsr activate_left_panel_func
+    jmp ufmi_end
+!:  cmp #$01
+    bne ufmi_end
+    /// TODO validate from to file type
+    jsr input_line_empty_render
     // lda #$00
     // sta geo_copy_to_srcPtr + 1
     // lda #$80
@@ -192,6 +167,7 @@ upload_from_memory_impl:
     // ldy #$10 //copy $8000 - $8fff
     // jsr geo_copy_to_geo
     // inc $d020 // confirm done
+ufmi_end:
     rts
 
 dowload_to_memory_impl:
@@ -217,7 +193,6 @@ menu_dev:      // called after running from vs code to skip download from GeoRAM
 // return: -
 init:
     jsr check_fs
-    jsr activate_left_panel_func  // start with cursor in left panel
     rts
 
 
