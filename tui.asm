@@ -385,9 +385,11 @@ focus_input_field:
 input_read_key:
     jsr GETIN           // non-blockin read key
     beq input_read_key
-    cmp #$1d            // right arrow
+    cmp #$1d            // right cursor
     beq input_arrow_right_handler
-    cmp #$9d            // left arrow
+    cmp #$9d            // left cursor
+    beq input_arrow_left_handler
+    cmp #$14            // delete
     beq input_arrow_left_handler
     cmp #$5f            // arrow left to escape  
     beq input_escape_handler
