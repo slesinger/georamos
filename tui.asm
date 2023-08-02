@@ -401,10 +401,10 @@ input_read_key:
     bcc input_letter_handler  // if within range then jump
     jmp input_read_key
 input_arrow_left_handler:
-    inc $d020
+    jsr cursor_move_left
     jmp input_read_key
 input_arrow_right_handler:
-    dec $d020
+    jsr cursor_move_right
     jmp input_read_key
 input_letter_handler:
     jsr load_current_input_field_vector
@@ -507,8 +507,102 @@ load_current_input_field_vector:
     lda #>input_field_upld_type
     sta $f6
     jmp load_current_input_field_vector_end
+!:
 load_current_input_field_vector_end:
     pla
+    rts
+
+/*
+Move cursor to right in current input field
+current_state: see state .enum
+return: -
+*/
+cursor_move_right:
+    jsr load_current_input_field_vector
+    // set pointer to char memory
+    ldy #16
+    lda ($f5), y  // get lo nibble of char memory
+    sta cmr0 + 1
+    sta cmr1 + 1
+    sta cmr2 + 1
+    sta cmr3 + 1
+    iny
+    lda ($f5), y  // get hi nibble of char memory
+    sta cmr0 + 2
+    sta cmr1 + 2
+    sta cmr2 + 2
+    sta cmr3 + 2
+    ldy #18  // cursor position pointer
+    lda ($f5), y  // get cursor position
+    tax
+    inx
+    txa
+    // check if cursor is at the end of input field
+    ldy #19
+    cmp ($f5), y  // compare cursor position to field length
+    beq cmr_next_field  // if cursor position is equal the length then skip to next input field
+    // if not at the end of input field then move cursor to right
+    tay  // old cursor position
+    dey
+    // hide cursor
+cmr0:lda $ffff, y
+    and #%00111111  // pure letters
+    ora #%10000000  // white background
+cmr1:sta $ffff, y  // write input char to char memory
+    // show cursor
+    iny  // increment cursor position
+cmr2:lda $ffff, y
+    and #%00111111  // pure letters
+    ora #%11000000  // white background
+cmr3:sta $ffff, y  // write input char to char memory
+    tya
+    ldy #18  // cursor position pointer
+    sta ($f5), y  // save new cursor position
+    rts
+cmr_next_field:
+    jsr next_upld_input_handler_impl
+    rts
+
+/*
+Move cursor to left in current input field
+current_state: see state .enum
+return: -
+*/
+cursor_move_left:
+    jsr load_current_input_field_vector
+    // set pointer to char memory
+    ldy #16
+    lda ($f5), y  // get lo nibble of char memory
+    sta cml0 + 1
+    sta cml1 + 1
+    sta cml2 + 1
+    sta cml3 + 1
+    iny
+    lda ($f5), y  // get hi nibble of char memory
+    sta cml0 + 2
+    sta cml1 + 2
+    sta cml2 + 2
+    sta cml3 + 2
+    ldy #18  // cursor position pointer
+    lda ($f5), y  // get cursor position
+    cmp #$00  // compare cursor position to beginning of the field
+    beq cmr_prev_field  // if cursor position is equal the length then skip to prev input field
+    // hide cursor
+    tay
+cml0:lda $ffff, y
+    and #%00111111  // pure letters
+    ora #%10000000  // white background
+cml1:sta $ffff, y  // write input char to char memory
+    // show cursor
+    dey  // increment cursor position
+cml2:lda $ffff, y
+    and #%00111111  // pure letters
+    ora #%11000000  // white background
+cml3:sta $ffff, y  // write input char to char memory
+    tya
+    ldy #18  // cursor position pointer
+    sta ($f5), y  // save new cursor position
+cmr_prev_field:  // jump to previous field is not implemented
     rts
 
 /*
@@ -534,19 +628,7 @@ input_letter_handler_impl:
     sta ($f5), y  // write input char to input field data
     ora #%10000000  // white background
 !:  sta $ffff, y  // write input char to char memory
-    iny
-    tya  // a = current cursor position
-    ldy #19  // input field length
-    cmp ($f5), y  // compare with input field length
-    beq !+  // if cursor position is equal the length then skip to next input field
-    ldy #18  // cursor position pointer
-    sta ($f5), y  // write cursor position
-    jmp ilhi_end
-!:  ldy #18  // cursor position pointer
-    lda #00  // reset cursor position
-    sta ($f5), y  // write cursor position
-    jsr next_upld_input_handler_impl
-ilhi_end:
+    jsr cursor_move_right
     rts
 
 
