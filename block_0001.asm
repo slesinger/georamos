@@ -156,15 +156,20 @@ upload_from_memory_impl:
     jmp ufmi_end
 !:  cmp #$01
     bne ufmi_end
-    /// TODO validate from to file type
+    /// TODO validate from, to, file, type
     jsr input_line_empty_render
-    // lda #$00
-    // sta geo_copy_to_srcPtr + 1
-    // lda #$80
-    // sta geo_copy_to_srcPtr + 2
-    // ldx #$01 //geo sector
+    // do actual upload
+    lda #state_upld_from
+    jsr load_state_input_field_vector
+    ldy #$00
+    lda ($f5), y
+    sta geo_copy_to_srcPtr + 1  // load $FROM address
+    iny
+    lda ($f5), y
+    sta geo_copy_to_srcPtr + 2
+    // ldx #$01 //geo sector  / need to resolve from next free FS sector
     // lda #$00 //geo block
-    // ldy #$10 //copy $8000 - $8fff
+    // ldy #$10 //copy $8000 - $8fff   / how many pages - need to calculate from $TO.hi - $FROM.hi
     // jsr geo_copy_to_geo
     // inc $d020 // confirm done
 ufmi_end:

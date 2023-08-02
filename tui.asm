@@ -480,6 +480,16 @@ return: $f5, $f6: vector of input field metadata
 load_current_input_field_vector:
     pha
     lda current_state
+    jsr load_state_input_field_vector
+    pla
+    rts
+
+/*
+Load pointer $f5/$f6 to input field vector metadata indicated in A
+A: state, see state .enum
+return: $f5, $f6: vector of input field metadata
+*/
+load_state_input_field_vector:
     cmp #state_upld_from
     bne !+
     lda #<input_field_upld_from
@@ -511,7 +521,6 @@ load_current_input_field_vector:
     jmp load_current_input_field_vector_end
 !:
 load_current_input_field_vector_end:
-    pla
     rts
 
 /*
