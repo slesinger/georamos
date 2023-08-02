@@ -287,7 +287,7 @@ actions_line_render:
 
 
 /*
-Change background color from bg2 to bg3
+Change background color from bg2 to bg3 and show cursor
 $f5, $f6: vector input field metadata
 X: <untouched>
 Y: <preserved>
@@ -322,6 +322,7 @@ aif_len:
     tay
     lda ($f7), y  // get char from char memory
     and #%00111111  // pure letters
+    ora #%11000000  // cyan background
     sta ($f7), y  // indicate cursor position
     pla
     tay
@@ -374,7 +375,6 @@ A: return
 return: A: 0: escape, 1: enter
 */
 focus_input_field:
-
     jsr load_current_input_field_vector
     jsr activate_input_field
 
@@ -397,7 +397,7 @@ input_read_key:
     beq next_upld_input_handler
     cmp #$20            // low boundary for accpeted keys
     bcc input_read_key  // if lower then jump
-    cmp #$5f            // high boundary for accpeted keys
+    cmp #$5f            // high boundary for accpted keys
     bcc input_letter_handler  // if within range then jump
     jmp input_read_key
 input_arrow_left_handler:
@@ -421,6 +421,10 @@ input_escape_handler:
 
 
 next_upld_input_handler:
+    jsr next_upld_input_handler_impl
+    jmp input_read_key
+
+next_upld_input_handler_impl:
     lda current_state
     // if state is upload from, then activate upload to
     cmp #state_upld_from
@@ -429,7 +433,9 @@ next_upld_input_handler:
     jsr deactivate_input_field
     lda #state_upld_to  // new input field
     sta current_state
-    jsr focus_input_field
+    jsr load_current_input_field_vector
+    jsr activate_input_field
+    jmp nuihi_end
     // if state is upload to, then activate upload file
 !:  cmp #state_upld_to
     bne !+
@@ -437,7 +443,9 @@ next_upld_input_handler:
     jsr deactivate_input_field
     lda #state_upld_file  // new input field
     sta current_state
-    jsr focus_input_field
+    jsr load_current_input_field_vector
+    jsr activate_input_field
+    jmp nuihi_end
     // if state is upload file, then activate upload type
 !:  cmp #state_upld_file
     bne !+
@@ -445,7 +453,9 @@ next_upld_input_handler:
     jsr deactivate_input_field
     lda #state_upld_type  // new input field
     sta current_state
-    jsr focus_input_field
+    jsr load_current_input_field_vector
+    jsr activate_input_field
+    jmp nuihi_end
     // if state is upload type, then activate upload from
 !:  cmp #state_upld_type
     bne !+
@@ -453,9 +463,11 @@ next_upld_input_handler:
     jsr deactivate_input_field
     lda #state_upld_from  // new input field
     sta current_state
-    jsr focus_input_field
-    // if state is left panel, then activate right panel
-    jmp input_read_key
+    jsr load_current_input_field_vector
+    jsr activate_input_field
+    jmp nuihi_end
+nuihi_end:
+    rts
 
 
 /*
@@ -533,6 +545,7 @@ input_letter_handler_impl:
 !:  ldy #18  // cursor position pointer
     lda #00  // reset cursor position
     sta ($f5), y  // write cursor position
+    jsr next_upld_input_handler_impl
 ilhi_end:
     rts
 
