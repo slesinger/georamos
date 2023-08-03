@@ -149,36 +149,39 @@ upload_from_memory_impl:
     lda #state_upld_from
     sta current_state
     jsr focus_input_field
-    cmp #$00
+    cmp #$00                    // escape pressed - no action
     bne !+
     jsr input_line_empty_render
     jsr activate_left_panel_func
     jmp ufmi_end
-!:  cmp #$01
+!:  cmp #$01                    // return pressed - upload
     bne ufmi_end
     /// TODO validate from, to, file, type
     jsr input_line_empty_render
     // do actual upload
-    lda #state_upld_from
+    lda #state_upld_from        // convert "from" address to word
     jsr load_state_input_field_vector
-    ldy #$00
-    lda ($f5), y
-    sta geo_copy_to_srcPtr + 1  // load $FROM address
-    iny
-    lda ($f5), y
-    sta geo_copy_to_srcPtr + 2
+    jsr memaddrstr_to_word
+    lda $f7
+    sta geo_copy_from_trgPtr + 1
+    lda $f8
+    sta geo_copy_from_trgPtr + 2
+
     // ldx #$01 //geo sector  / need to resolve from next free FS sector
     // lda #$00 //geo block
     // ldy #$10 //copy $8000 - $8fff   / how many pages - need to calculate from $TO.hi - $FROM.hi
     // jsr geo_copy_to_geo
-    // inc $d020 // confirm done
+    inc $d020 // confirm done
 ufmi_end:
     rts
 
 dowload_to_memory_impl:
-    lda #$00
+    lda #state_upld_from
+    jsr load_state_input_field_vector
+    jsr memaddrstr_to_word
+    lda $f7
     sta geo_copy_from_trgPtr + 1
-    lda #$80
+    lda $f8
     sta geo_copy_from_trgPtr + 2
     ldx #$01 //geo sector
     lda #$00 //geo block
@@ -186,6 +189,66 @@ dowload_to_memory_impl:
     jsr geo_copy_from_geo
     inc $d020 // confirm done
     rts
+
+/*
+function converts memory address reprented as string to word.
+$f5, $f6: vector of pointing to string
+return: $f7 lo nibble, $f8 hi nibble
+*/
+memaddrstr_to_word:
+.break
+    ldy #$00  // $X...
+    lda ($f5), y
+    cmp #$07
+    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
+    cld
+    sec
+    sbc #$30  // shift $30-$39 > $00-$09
+    jmp !++
+!:  adc #$09  // shift $01-$06 > $0a-$f
+!:  asl
+    asl
+    asl
+    asl
+    sta $f8
+    iny       // $.X..
+    lda ($f5), y
+    cmp #$07
+    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
+    cld
+    sec
+    sbc #$30  // shift $30-$39 > $00-$09
+    jmp !++
+!:  adc #$09  // shift $01-$06 > $0a-$f
+!:  ora $f8
+    sta $f8
+    iny       // $..X.
+    lda ($f5), y
+    cmp #$07
+    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
+    cld
+    sec
+    sbc #$30  // shift $30-$39 > $00-$09
+    jmp !++
+!:  adc #$09  // shift $01-$06 > $0a-$f
+!:  asl
+    asl
+    asl
+    asl
+    sta $f7
+    iny       // $...X
+    lda ($f5), y
+    cmp #$07
+    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
+    cld
+    sec
+    sbc #$30  // shift $30-$39 > $00-$09
+    jmp !++
+!:  adc #$09  // shift $01-$06 > $0a-$f
+!:  ora $f7
+    sta $f7
+    rts
+
 
 menu_dev:      // called after running from vs code to skip download from GeoRAM
     jsr init

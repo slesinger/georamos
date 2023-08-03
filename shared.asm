@@ -22,6 +22,8 @@
 .const SCNKEY = $FF9F
 .const GETIN = $ffe4
 
+hexastr: .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $41, $42, $43, $44, $45, $46
+
 state: .enum {
     state_left_panel, 
     state_right_panel, 
