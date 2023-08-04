@@ -8,11 +8,17 @@ The OS booting from GeoRAM
 - Quick tools access
 - Background codelets execution
 
+## Build
+
+Before building georamos image, make sure that ```BOOTBLOCK_DEVELOPMENT``` in ```georam.asm``` is inactive.
+
+Find ```georamos``` image in root folder. Its size must be 4194304 bytes.
+
 ## Usage
 
-After poweroff, first, do bootstrap by ```SYS 57000``` ($DEA8) or ```SYS $DEAD```.
+After poweroff, first, do bootstrap by ```SYS 57080```.
 
-Then, anytime, enter GeoRAMOS menu by ```SYS 51200```.
+Then, anytime, enter GeoRAMOS menu by ```SYS 49408```.
 
 ## Key bindings
 1    Help

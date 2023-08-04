@@ -3,6 +3,8 @@
 
 // Memory
 .const page00 = $c000
+.const page00_lo = $00
+.const page00_hi = $c0
 .const page00_end = $c0ff
 .const page01 = $c100
 .const page01_hi = $c1
@@ -19,10 +21,9 @@
 .var georam_block = $dfff  // 0-255, always store to geomem_block, because it is not possible read from this address
 
 // Kernal
+.const PRINT_NSTR = $ab1e
 .const SCNKEY = $FF9F
 .const GETIN = $ffe4
-
-hexastr: .byte $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $41, $42, $43, $44, $45, $46
 
 state: .enum {
     state_left_panel, 

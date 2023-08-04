@@ -1,13 +1,12 @@
 #importonce
 #import "shared.asm"
 
-// .filenamespace block_0000
+// #if !BOOTBLOCK_DEVELOPMENT
+    // .segment block_0000
+// #endif
 
-#if !BOOTBLOCK_DEVELOPMENT
-    .segment block_0000
-#endif
 // This must be target execution address in spite it will be copied from page 0 to $c000
-*=page00 "copy_bootstrap" // good for entering GeoRAMOS menu by SYS 51200
+*=page00 "copy_bootstrap" // good for entering GeoRAMOS menu by SYS 51200?
     jmp menu
 
 .text "MEDLIK"  // magic and more magic
@@ -62,7 +61,7 @@ geo_copy_common_init:
 // Y: number of pages to copy
 geo_copy_to_geo:
     jsr geo_copy_common_init
-    sty j1+1
+    sty j1+1d
     ldy #$00
 geo_copy_to_srcPtr:
     lda $0400,x  // $1000 is fake address, it will be replaced by real address
@@ -75,7 +74,7 @@ geo_copy_to_srcPtr:
 j1: cpy #$1   // is fake, it will be replaced by real number of blocks
     bne geo_copy_to_srcPtr 
     rts
-
+geo_copy_to_geo_last_block_bytes: .byte $00
 
 // Copy data from georam to target memory pointer
 // geo_copy_from_trgPtr + 1: source address
@@ -109,21 +108,19 @@ bootstrap_code:
     sta geo_copy_from_trgPtr + 2
     ldx #$00 //geo sector
     lda #$01 //geo block
-    ldy #$03 //copy n pages
+    ldy #$0e //copy n pages
     jsr geo_copy_from_geo
     jsr init
     jmp menu
 
 .text "END0!"
 
-// *=$c8a8 "Menu vector 57000" // helper to bootstrap with SYS 57000
-//     jmp $de09
-// *=$c8ad "Menu vector $DEAD" // helper to bootstrap with SYS $DEAD
-//     jmp $de09
-
 memaddr_ptr: .word $0000
 sector_ptr: .word $0000
 block_ptr: .word $0000
+
+*=$c0f8 "Menu vector 49400" // helper to bootstrap with SYS 49400
+    jmp $de09
 
 *=page00_end "boot end"
 .byte $ff

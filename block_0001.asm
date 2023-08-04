@@ -1,12 +1,12 @@
 #importonce
 #import "shared.asm"
-// .import source "georam.sym"
 
-// .filenamespace block_0001
+// #if !BOOTBLOCK_DEVELOPMENT
+    // .segment block_0001
+// #endif
 
-#if !BOOTBLOCK_DEVELOPMENT
-    .segment block_0001
-#endif
+// *=$c350 "Menu vector 50000" // helper to jump to menu on nice decimal address
+//     jmp $c100
 
 *=page01 "menu"
     jsr menu_screen_init  // all registers destroyed
@@ -158,19 +158,28 @@ upload_from_memory_impl:
     bne ufmi_end
     /// TODO validate from, to, file, type
     jsr input_line_empty_render
-    // do actual upload
+    // get $FROM address
     lda #state_upld_from        // convert "from" address to word
     jsr load_state_input_field_vector
     jsr memaddrstr_to_word
     lda $f7
-    sta geo_copy_from_trgPtr + 1
+    sta geo_copy_to_srcPtr + 1  // set address from geocopy will take data from memory
     lda $f8
-    sta geo_copy_from_trgPtr + 2
-
-    // ldx #$01 //geo sector  / need to resolve from next free FS sector
-    // lda #$00 //geo block
-    // ldy #$10 //copy $8000 - $8fff   / how many pages - need to calculate from $TO.hi - $FROM.hi
-    // jsr geo_copy_to_geo
+    sta geo_copy_to_srcPtr + 2
+    // get $TO address to calculate number of blocks to copy
+    lda #state_upld_to        // convert "to" address to word
+    jsr load_state_input_field_vector
+    jsr memaddrstr_to_word
+    lda $f7
+    sta geo_copy_to_geo_last_block_bytes
+    lda $f8    // $f8 is hi nibble of $TO. Number of blocks to copy is $TO_hi - $FROM_hi
+    sec
+    sbc geo_copy_to_srcPtr + 2
+    tay  // y: number of blocks to copy
+    ldx #$01 //geo sector  / need to resolve from next free FS sector
+    lda #$00 //geo block   / need to resolve from next free FS block
+    // do actual upload
+    jsr geo_copy_to_geo
     inc $d020 // confirm done
 ufmi_end:
     rts
@@ -183,20 +192,28 @@ dowload_to_memory_impl:
     sta geo_copy_from_trgPtr + 1
     lda $f8
     sta geo_copy_from_trgPtr + 2
+
+    lda #state_upld_to
+    jsr load_state_input_field_vector
+    jsr memaddrstr_to_word
+    lda $f7  // lo nibble of $TO
+    sta last_block_bytes
+    lda $f8  // hi nibble of $TO
+    sec
+    sbc $f8  // $TO - $FROM = number of blocks to copy
+    tay
     ldx #$01 //geo sector
     lda #$00 //geo block
-    ldy #$10 //copy n pages
     jsr geo_copy_from_geo
     inc $d020 // confirm done
     rts
-
+last_block_bytes: .byte $00
 /*
 function converts memory address reprented as string to word.
 $f5, $f6: vector of pointing to string
 return: $f7 lo nibble, $f8 hi nibble
 */
 memaddrstr_to_word:
-.break
     ldy #$00  // $X...
     lda ($f5), y
     cmp #$07
@@ -276,6 +293,31 @@ georam_set:
     stx geomem_block
     rts
 
+
+/* upload firmware $c000-$cfff to georam sector 0 block 0
+   copy this fresh compiled firmware from $c000 to $cfff to georamos image
+   other content of the images stays intact
+input: -
+return: -
+*/
+firmware_upload:
+    lda #page00_lo
+    sta geo_copy_to_srcPtr + 1
+    lda #page00_hi
+    sta geo_copy_to_srcPtr + 2
+    ldx #$00  // sector 0
+    lda #$00  // block 0
+    ldy #$10  // 16 pages ~ c000-cfff
+    jsr geo_copy_to_geo
+	lda #<fw_upload_ok
+	ldy #>fw_upload_ok
+	jsr PRINT_NSTR
+!:  jsr GETIN
+    beq !-
+	rts
+fw_upload_ok:
+    .text "FIRMWARE UPLOADED SUCCESSFULLY"
+    .byte $22, $00
 
 
 // State of the program
