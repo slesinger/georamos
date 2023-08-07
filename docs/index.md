@@ -52,7 +52,7 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- key shortcuts pro spousteni menu
+- key shortcuts pro spousteni menu ***
 - design UI toolkit
 - ukladani souboru (root dir, jmeno MEDLIK)
   - existuje root dir zaznam? kdyz ne, inicializuj fs
@@ -67,6 +67,30 @@ the ` key should give you a left-arrow.
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
 - .segmentdef block_fill [min=$0000, max=$3eff, fill] problem se zero page warningem, use .abs
+
+
+*** keyabord CIA 1 $DC00
+$DC0D irq
+CIA1 IRG pin je napojeny na CPU IRG pin
+$FFFE–$FFFF is the vector for handling both IRQ and BRK-instructions; it points to 65352/$FF48, nakonec 	JMP ($0314), By default the IRQ vector points to 59953/$EA31
+
+Init       SEI                  ; set interrupt bit, make the CPU ignore irq requests
+           LDA #%01111111       ; switch off interrupt signals from CIA-1
+           STA $DC0D
+
+           LDA $DC0D            ; acknowledge pending interrupts from CIA-1
+           LDA $DD0D            ; acknowledge pending interrupts from CIA-2
+
+?          LDA #210             ; set rasterline where interrupt shall occur
+?          STA $D012
+314/315 nebo NMI na 316/317?
+           LDA #<Irq            ; set ISR
+           STA $0314
+           LDA #>Irq
+           STA $0315
+
+           CLI                  ; clear irq flag, allowing CPU to respond to interrupt requests
+           RTS
 
 
 /*

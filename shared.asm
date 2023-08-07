@@ -24,6 +24,7 @@
 .const PRINT_NSTR = $ab1e
 .const SCNKEY = $FF9F
 .const GETIN = $ffe4
+.const CHROUT = $ffd2
 
 state: .enum {
     state_left_panel, 
