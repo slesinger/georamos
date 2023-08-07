@@ -197,6 +197,9 @@ wf_last_block:
     jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
     inc $d020 // confirm done
     rts
+write_file_current_block: .byte $ff
+write_file_count_blocks: .byte $ff
+
 
 /* Find first free file entry in directory
 return: $f5/$f6 - pointer to file record with $dexx

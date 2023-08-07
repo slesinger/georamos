@@ -635,12 +635,12 @@ input_letter_handler_impl:
     lda ($f5), y  // get cursor position
     tay
     pla
-    and #%00111111  // pure letters
-    sta ($f5), y  // write input char to input field data
+    sta ($f5), y  // write input char to input field data as petscii
     ora #%10000000  // white background
 !:  sta $ffff, y  // write input char to char memory
     jsr cursor_move_right
     rts
+
 
 
 input_fields:

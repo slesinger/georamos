@@ -192,8 +192,6 @@ upload_from_memory_impl:
     jsr write_file
 ufmi_end:
     rts
-write_file_current_block: .byte $ff
-write_file_count_blocks: .byte $ff
 
 dowload_to_memory_impl:
     lda #state_upld_from
