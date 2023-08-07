@@ -189,32 +189,7 @@ upload_from_memory_impl:
     lda #>input_field_upld_file
     sta create_file_parent_filename +2
     jsr create_file  // > $f5/$f6 sector/block of data to write
-
-    // do actual write file
-    lda #$00
-    sta write_file_current_block
-wf_block:
-    jsr georam_set_f5f6  // switch sector/block to write out data, infered by create_file or find_free_fat_entry
-    ldx #$00
-write_file_srcPtr:
-    lda $ffff,x  // $1000 is fake address, it will be replaced by real address
-    sta pagemem,x
-    inx
-    bne write_file_srcPtr  // copy one full page
-
-    inc write_file_current_block
-    lda write_file_current_block
-    cmp write_file_count_blocks
-    beq wf_last_block  // write next block
-    inc write_file_srcPtr +2  // increase memory page to read from
-    jsr save_next_to_pointer_table  // save next block pointer to FAT pointer table, 
-                                    // return $f5/$f6 as new free sector/block
-    jmp wf_block
-wf_last_block:
-    lda geo_copy_to_geo_last_block_bytes
-    sta $f6
-    jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
-    inc $d020 // confirm done
+    jsr write_file
 ufmi_end:
     rts
 write_file_current_block: .byte $ff

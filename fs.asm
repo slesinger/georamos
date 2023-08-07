@@ -167,6 +167,36 @@ cf_fat_block_ptr:
     sta $f6
     rts
 
+/*
+$f5/$f6 - sector/block pointer where to write out data
+write_file_srcPtr +1, +2: ptr to data to write
+*/
+write_file:
+    lda #$00
+    sta write_file_current_block
+wf_block:
+    jsr georam_set_f5f6  // switch sector/block to write out data, infered by create_file or find_free_fat_entry
+    ldx #$00
+write_file_srcPtr:
+    lda $ffff,x  // $1000 is fake address, it will be replaced by real address
+    sta pagemem,x
+    inx
+    bne write_file_srcPtr  // copy one full page
+
+    inc write_file_current_block
+    lda write_file_current_block
+    cmp write_file_count_blocks
+    beq wf_last_block  // write next block
+    inc write_file_srcPtr +2  // increase memory page to read from
+    jsr save_next_to_pointer_table  // save next block pointer to FAT pointer table, 
+                                    // return $f5/$f6 as new free sector/block
+    jmp wf_block
+wf_last_block:
+    lda geo_copy_to_geo_last_block_bytes
+    sta $f6
+    jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
+    inc $d020 // confirm done
+    rts
 
 /* Find first free file entry in directory
 return: $f5/$f6 - pointer to file record with $dexx
@@ -266,7 +296,6 @@ save_next_to_pointer_table:
     sta $de00, x       // store there the next sector pointer
 
     jsr find_free_fat_entry   // find next free block, returns $f5/$f6 sector/block
-.break
 
     // switch to sector FAT pointer table (sector 0, blocks 128-190)
     lda sntpt_olddata_sector
