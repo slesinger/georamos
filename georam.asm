@@ -33,6 +33,8 @@
 #import "block_0000.asm"
 #import "block_0001.asm"
 #import "tui.asm"
+#import "tui-input.asm"
+#import "tui-panel.asm"
 #import "fs.asm"
 
 
