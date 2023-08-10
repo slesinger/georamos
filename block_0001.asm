@@ -167,6 +167,7 @@ upload_from_memory_impl:
     sta write_file_srcPtr + 1  // set address for write_file will take data from memory
     lda $f8
     sta write_file_srcPtr + 2
+    sta create_file_hi_original_address +1
     // get $TO address to calculate number of blocks to copy
     lda #state_upld_to        // convert "to" address to word
     jsr load_state_input_field_vector

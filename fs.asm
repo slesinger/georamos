@@ -1,5 +1,10 @@
 #importonce
 
+#import "shared.asm"
+#import "block_0000.asm"
+#import "block_0001.asm"
+
+
 // Check if GEORAM is present TODO
 // Check if root directory is present and initialize fs if not
 // X: <preserved>
@@ -39,9 +44,9 @@ get_first_dir_entry:
     pha
     tya
     pha
-    // switch geo to sector 0 block 27
+    // switch geo to sector 0 block 28
     lda #$00
-    ldx #27
+    ldx #28
     jsr georam_set
     // set dir entry idx to 0
     ldx #$00
@@ -82,21 +87,23 @@ dir_entry_ptr_within_block: .byte $00
 
 // Assumes geo is set to sector 0 block 27
 // Creates root dir entry
-// Y: <untouched>
 // X: <untouched>
+// Y: <preserved>
 // A: <preserved>
 // return: -
 format_fs:
     pha
+    tya
+    pha
     lda #$40  // dir flag, parent dir = 0
-    sta $de00
+    sta pagemem +0
     lda #$00
-    sta $de01  // size
+    sta pagemem +1  // size
     lda #$2f
-    sta $de02  // filename
+    sta pagemem +2  // filename
     lda #$20   // space
-    sta $de03
-    sta $de04
+    sta pagemem +3
+    sta pagemem +4
     sta $de05
     sta $de06
     sta $de07
@@ -115,6 +122,18 @@ format_fs:
     lda #$00  // block
     sta $de13
     // TODO fill rest of block with 0
+    // put spaces to unused block to use them as fill in dir view
+    lda #$00
+    ldx #$ff  // unused block
+    jsr georam_set
+    lda #$20
+    ldy #233  // last entry at 21 bytes per entry = 231
+!:  sta pagemem, y  // space char
+    iny
+    cpy #233+16
+    bne !-
+    pla
+    tay
     pla
     rts
 
@@ -126,6 +145,7 @@ create_file_parent_directory_id +1: 0-59
 create_file_parent_file_flags +1: $80 PRG, $c0 SEQ
 create_file_parent_size_blocks +1: 1-256
 create_file_parent_filename +1, +2: ptr to filename, 16chars max, filled with spaces
+create_file_hi_original_address: come from $FROM.hi
  return: $f5/$f6 - sector/block pointer to first FAT record
  */
  create_file:
@@ -155,6 +175,10 @@ create_file_parent_filename:
     inx
     cpx #$10
     bne !-
+create_file_hi_original_address:
+    lda #$00  // hi nibble of original memory address, can be used when downloading back to memory
+    sta ($f5), y
+    iny
 cf_fat_sector_ptr:
     lda #$ff  // sector
     tax
@@ -216,9 +240,9 @@ find_first_free_file_entry:
     beq ffffie_found
     txa
     sec
-    adc #20  // skip 20 bytes which is file entry size
+    adc #20  // skip 21 bytes which is file entry size
     tax
-    cpx #240  // 12entries by 20bytes
+    cpx #252  // 12entries by 20bytes
     bne !-
     jsr georam_next
     lda #128  // first block after file entry table

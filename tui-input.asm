@@ -1,5 +1,7 @@
 #importonce
 
+#import "tui.asm"
+
 /*
 Change background color from bg2 to bg3 and show cursor
 $f5, $f6: vector input field metadata
@@ -336,21 +338,21 @@ A: input character from keypress
 return: -
 */
 input_letter_handler_impl:
-    // prepare char memory pointer
+    // prepare screen memory pointer
     pha
     ldy #16
-    lda ($f5), y  // get lo nibble of char memory
-    sta !+ + 1
+    lda ($f5), y  // get lo nibble of screen memory
+    sta !+ +1
     iny
-    lda ($f5), y  // get hi nibble of char memory
-    sta !+ + 2
+    lda ($f5), y  // get hi nibble of screen memory
+    sta !+ +2
     ldy #18  // cursor position pointer
     lda ($f5), y  // get cursor position
     tay
     pla
-    sta ($f5), y  // write input char to input field data as petscii
+    sta ($f5), y  // write input char to input field data as key scancode
     ora #%10000000  // white background
-!:  sta $ffff, y  // write input char to char memory
+!:  sta $ffff, y  // write input char to screen memory
     jsr cursor_move_right
     rts
 

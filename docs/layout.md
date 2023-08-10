@@ -42,7 +42,7 @@ bootstrap_end:
 # HDD layout
 Sector 0    , block    0-27 : GeoRAMOS (28 blocks)
 Sector 0    , blocks  28-32 : Directory table (5 blocks)
-Sector 0    , blocks  33-127: File table (100 blocks)              [$84000]
+Sector 0    , blocks  33-127: File table (95 blocks)               [$84000]
 Sector 0    , blocks 128-190: FAT sector pointer table (63 blocks) [$200000]
 Sector 0    , block  191    : unused
 Sector 0    , blocks 192-254: FAT block pointer table (63 blocks)  [$300000]
@@ -53,6 +53,7 @@ Sector 01-63                : data area
 Total dir table size 100blocks*256bytes = 25600bytes
 Each block holds 12 entries (20bytes/entry * 12 = 240 < 256)
 Maximum directories: 60
+Maximum files in directory: 128
 
 Record is fixed length (20bytes):
 - 0B  directory id is implicit by its position, needed for linking as parent directory
@@ -61,6 +62,7 @@ Record is fixed length (20bytes):
   - 2bits  file flags
 - 1B  size in blocks (block=256bytes, max 256)
 - 16B filename, max 16chars, filled with blank spaces
+- 1B hi nibble of original memory address !!!!!!! Make sure length 21 of the record is updated everywhere in the code !!!!!!
 - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
 - 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
 
@@ -83,9 +85,13 @@ Maximum number of files: 63 - 1280(avg file size <16block is ok (<$1000))
 Maximum fat records: 1280
 
 
-#### FAT record
+### FAT record
 Position of FAT record in "FAT sector pointer table" and "FAT block pointer table" (same in both) reflects position of data block.
+
+#### FAT sector pointer table
 - 1B sector of next block or in case last record of the file it is $00 - organized as "FAT sector pointer table"
+
+#### FAT block pointer table
 - 1B block of next block  or in case last record of the file number of bytes belonging from the block - organized as "FAT block pointer table"
 If FAT block table record contains 0, corresponding data space is not allocated.
 

@@ -1,6 +1,9 @@
 #importonce
 // http://petscii.krissz.hu
 
+#import "tui.asm"
+#import "tui-panel.asm"
+
 menu_screen_init:
 	// set to 25 line extended color text mode and turn on the screen
 	lda #$5B
