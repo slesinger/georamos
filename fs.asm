@@ -146,13 +146,13 @@ create_file_parent_file_flags +1: $80 PRG, $c0 SEQ
 create_file_parent_size_blocks +1: 1-256
 create_file_parent_filename +1, +2: ptr to filename, 16chars max, filled with spaces
 create_file_hi_original_address: come from $FROM.hi
- return: $f5/$f6 - sector/block pointer to first FAT record
+ return: $fb/$fc - sector/block pointer to first FAT record
  */
  create_file:
     jsr find_free_fat_entry
-    lda $f5
+    lda $fb
     sta cf_fat_sector_ptr + 1
-    lda $f6
+    lda $fc
     sta cf_fat_block_ptr + 1
     jsr find_first_free_file_entry  // this will also leave $de00 set to point to georam correctly to write file meta entry
     ldy #$00
@@ -161,45 +161,45 @@ create_file_parent_directory_id:
     and #%00111111  // TODO return error if parent directory id is > 59
 create_file_parent_file_flags:
     ora #$ff
-    sta ($f5), y  // parent directory id
+    sta ($fb), y  // parent directory id
     iny
 create_file_parent_size_blocks:
     lda #$ff
-    sta ($f5), y  // size in blocks
+    sta ($fb), y  // size in blocks
     iny
     ldx #$00
 create_file_parent_filename:
 !:  lda $ffff, x
-    sta ($f5), y
+    sta ($fb), y
     iny
     inx
     cpx #$10
     bne !-
 create_file_hi_original_address:
     lda #$00  // hi nibble of original memory address, can be used when downloading back to memory
-    sta ($f5), y
+    sta ($fb), y
     iny
 cf_fat_sector_ptr:
     lda #$ff  // sector
     tax
-    sta ($f5), y
+    sta ($fb), y
     iny
 cf_fat_block_ptr:
     lda #$ff  // block
-    sta ($f5), y
-    stx $f5
-    sta $f6
+    sta ($fb), y
+    stx $fb
+    sta $fc
     rts
 
 /*
-$f5/$f6 - sector/block pointer where to write out data
+$fb/$fc - sector/block pointer where to write out data
 write_file_srcPtr +1, +2: ptr to data to write
 */
 write_file:
     lda #$00
     sta write_file_current_block
 wf_block:
-    jsr georam_set_f5f6  // switch sector/block to write out data, infered by create_file or find_free_fat_entry
+    jsr georam_set_fbfc  // switch sector/block to write out data, infered by create_file or find_free_fat_entry
     ldx #$00
 write_file_srcPtr:
     lda $ffff,x  // $1000 is fake address, it will be replaced by real address
@@ -213,11 +213,11 @@ write_file_srcPtr:
     beq wf_last_block  // write next block
     inc write_file_srcPtr +2  // increase memory page to read from
     jsr save_next_to_pointer_table  // save next block pointer to FAT pointer table, 
-                                    // return $f5/$f6 as new free sector/block
+                                    // return $fb/$fc as new free sector/block
     jmp wf_block
 wf_last_block:
     lda geo_copy_to_geo_last_block_bytes
-    sta $f6
+    sta $fc
     jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
     inc $d020 // confirm done
     rts
@@ -226,7 +226,7 @@ write_file_count_blocks: .byte $ff
 
 
 /* Find first free file entry in directory
-return: $f5/$f6 - pointer to file record with $dexx
+return: $fb/$fc - pointer to file record with $dexx
 */
 find_first_free_file_entry:
     // start at sector 0 block 33
@@ -250,22 +250,22 @@ find_first_free_file_entry:
     bne !--
     // no more space to allocate a new file
     lda #$ff
-    sta $f5
-    sta $f6
+    sta $fb
+    sta $fc
     rts
 ffffie_found:
     lda geomem_block
     sec
     sbc #33
-    stx $f5   // position for file entry relative to $de00
+    stx $fb   // position for file entry relative to $de00
     lda #$de  // position to IO1 page, georam block is set already
-    sta $f6   
+    sta $fc   
     rts
 
 
 /* Find first free FAT entry
-return: $f5/$f6 - sector/block to free FAT record, it will destroy $de00 georam position
-  $f5/$f6 will be set to $ffff if disk is full
+return: $fb/$fc - sector/block to free FAT record, it will destroy $de00 georam position
+  $fb/$fc will be set to $ffff if disk is full
 */
 find_free_fat_entry:
     // start at sector 0 block 192
@@ -286,15 +286,15 @@ find_free_fat_entry:
     bne !--
     // disk full
     lda #$ff
-    sta $f5
-    sta $f6
+    sta $fb
+    sta $fc
     rts
 ffffe_found:
     lda geomem_block
     sec
     sbc #191
-    sta $f5   // sector = current block - 192 + 1, see HDD Layout FAT block pointer table (63 blocks)
-    stx $f6   // block = current position within the block
+    sta $fb   // sector = current block - 192 + 1, see HDD Layout FAT block pointer table (63 blocks)
+    stx $fc   // block = current position within the block
     rts
 
 /* Store sector/block pointer of next allocated block to FAT sector pointer table and FAT block pointer table
@@ -322,7 +322,7 @@ save_next_to_pointer_table:
     ldx sntpt_olddata_block  // position within block of FAT sector pointer table indicates current block
     sta $de00, x       // store there the next sector pointer
 
-    jsr find_free_fat_entry   // find next free block, returns $f5/$f6 sector/block
+    jsr find_free_fat_entry   // find next free block, returns $fb/$fc sector/block
 
     // switch to sector FAT pointer table (sector 0, blocks 128-190)
     lda sntpt_olddata_sector
@@ -332,7 +332,7 @@ save_next_to_pointer_table:
     tax  // block
     lda #$00  // sector
     jsr georam_set
-    lda $f5  // next free sector pointer
+    lda $fb  // next free sector pointer
     ldx sntpt_olddata_block  // position within block of FAT sector pointer table indicates current block
     sta $de00, x       // store there the next sector pointer
 
@@ -344,7 +344,7 @@ save_next_to_pointer_table:
     tax  // block
     lda #$00  // sector
     jsr georam_set
-    lda $f6  // next free block pointer
+    lda $fc  // next free block pointer
     ldx sntpt_olddata_block  // position within block of FAT sector pointer table indicates current block
     sta $de00, x       // store there the next sector pointer
     rts
@@ -355,7 +355,7 @@ sntpt_olddata_block: .byte $ff
 It is not really secotr/block. Instead, sector=0 to indicate EndOfFile. Block=number of bytes 
 from the last block belonging to the file.
 Current sector is know from geomem_sector/geomem_block
-$f5/$f6 0 for end of file (is hardcoded) / lo nibble from the $TO input
+$fb/$fc 0 for end of file (is hardcoded) / lo nibble from the $TO input
 return -
 */
 save_eof_to_pointer_table:
@@ -373,7 +373,7 @@ save_eof_to_pointer_table:
     tax  // block
     lda #$00  // sector
     jsr georam_set
-    lda $f5  // next free sector pointer
+    lda $fb  // next free sector pointer
     ldx sntpt_olddata_block  // position within block of FAT sector pointer table indicates current block
     sta $de00, x       // store there the next sector pointer
 
@@ -385,7 +385,7 @@ save_eof_to_pointer_table:
     tax  // block
     lda #$00  // sector
     jsr georam_set
-    lda $f6  // next free block pointer
+    lda $fc  // next free block pointer
     ldx sntpt_olddata_block  // position within block of FAT sector pointer table indicates current block
     sta $de00, x       // store there the next sector pointer
     rts

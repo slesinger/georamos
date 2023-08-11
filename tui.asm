@@ -51,7 +51,7 @@ render_source_meta: pointer source buffer structure metainformation:
   width, height, 
   sourceCharPtr, targetCharPtr, 
   sourceColorPtr, targetColorPtr
-$f5-$f6 render_source_meta_ptr
+$fb/$fc render_source_meta_ptr
 X: <destroyed>
 Y: <destroyed>
 A: <destroyed>
@@ -60,35 +60,35 @@ return: -
 render:
     cld
     ldy #$00
-    lda ($f5),y  // width
+    lda ($fb),y  // width
     sta r_width + 1
     sta r_width2 + 1
     iny
-    lda ($f5),y  // height
+    lda ($fb),y  // height
     sta r_height + 1
     iny
-	lda ($f5),y  // chars from
+	lda ($fb),y  // chars from
 	sta r_src_char + 1
     iny
-	lda ($f5),y
+	lda ($fb),y
 	sta r_src_char + 2
     iny
-	lda ($f5),y  // chars target $0400 + position
+	lda ($fb),y  // chars target $0400 + position
 	sta r_trg_char + 1
     iny
-	lda ($f5),y
+	lda ($fb),y
 	sta r_trg_char + 2
     iny
-	lda ($f5),y  // color from
+	lda ($fb),y  // color from
 	sta r_src_color + 1
     iny
-	lda ($f5),y
+	lda ($fb),y
 	sta r_src_color + 2
     iny
-	lda ($f5),y  // color target $d800 + position
+	lda ($fb),y  // color target $d800 + position
 	sta r_trg_color + 1
     iny
-	lda ($f5),y
+	lda ($fb),y
 	sta r_trg_color + 2
 
 r_width:
@@ -145,34 +145,34 @@ y_done:
 
 menu_line_render:
     lda #<menu_line_meta
-    sta $f5
+    sta $fb
     lda #>menu_line_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
 
 input_line_empty_render:
     lda #<input_line_empty_meta
-    sta $f5
+    sta $fb
     lda #>input_line_empty_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
 input_line_upld_render:
     lda #<input_line_upld_meta
-    sta $f5
+    sta $fb
     lda #>input_line_upld_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
 actions_line_render:
     lda #<actions_line_meta
-    sta $f5
+    sta $fb
     lda #>actions_line_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 

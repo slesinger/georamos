@@ -182,7 +182,7 @@ upload_from_memory_impl:
     sta create_file_parent_filename +1
     lda #>input_field_upld_file
     sta create_file_parent_filename +2
-    jsr create_file  // > $f5/$f6 sector/block of data to write
+    jsr create_file  // > $fb/$fc sector/block of data to write
     jsr write_file
 ufmi_end:
     rts
@@ -213,12 +213,12 @@ dowload_to_memory_impl:
 last_block_bytes: .byte $00
 /*
 function converts memory address reprented as string to word.
-$f5, $f6: vector of pointing to string
+$fb, $fc: vector of pointing to string
 return: $f7 lo nibble, $f8 hi nibble
 */
 memaddrstr_to_word:
     ldy #$00  // $X...
-    lda ($f5), y
+    lda ($fb), y
     cmp #$07
     bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
     cld
@@ -232,7 +232,7 @@ memaddrstr_to_word:
     asl
     sta $f8
     iny       // $.X..
-    lda ($f5), y
+    lda ($fb), y
     cmp #$07
     bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
     cld
@@ -243,7 +243,7 @@ memaddrstr_to_word:
 !:  ora $f8
     sta $f8
     iny       // $..X.
-    lda ($f5), y
+    lda ($fb), y
     cmp #$07
     bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
     cld
@@ -257,7 +257,7 @@ memaddrstr_to_word:
     asl
     sta $f7
     iny       // $...X
-    lda ($f5), y
+    lda ($fb), y
     cmp #$07
     bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
     cld
@@ -298,17 +298,17 @@ georam_set:
     rts
 
 /* Safely switch georam while preserving sector/block in geomem variables
-$f5: sector 0-63
-$f6: block 0-255
+$fb: sector 0-63
+$fc: block 0-255
 A,X,Y: <untouched>
 return: -
 */
-georam_set_f5f6:
+georam_set_fbfc:
     pha
-    lda $f5
+    lda $fb
     sta geomem_sector
     sta georam_sector
-    lda $f6
+    lda $fc
     sta geomem_block
     sta georam_block
     pla

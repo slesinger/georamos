@@ -35,9 +35,9 @@ panel_header_left_render:
     lda #<default_color_memory + 40
     sta panel_header_meta + 8   // targetColorPtr
     lda #<panel_header_meta
-    sta $f5
+    sta $fb
     lda #>panel_header_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -47,9 +47,9 @@ panel_header_right_render:
     lda #<default_color_memory + 40 + 20
     sta panel_header_meta + 8   // targetColorPtr
     lda #<panel_header_meta
-    sta $f5
+    sta $fb
     lda #>panel_header_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -59,9 +59,9 @@ panel_vertical_leftl_render:
     lda #<default_color_memory + 2 * 40
     sta panel_vertical_meta + 8   // targetColorPtr
     lda #<panel_vertical_meta
-    sta $f5
+    sta $fb
     lda #>panel_vertical_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -71,9 +71,9 @@ panel_vertical_leftr_render:
     lda #<default_color_memory + 2 * 40 + 19
     sta panel_vertical_meta + 8   // targetColorPtr
     lda #<panel_vertical_meta
-    sta $f5
+    sta $fb
     lda #>panel_vertical_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -83,9 +83,9 @@ panel_vertical_rightl_render:
     lda #<default_color_memory + 2 * 40 + 20
     sta panel_vertical_meta + 8   // targetColorPtr
     lda #<panel_vertical_meta
-    sta $f5
+    sta $fb
     lda #>panel_vertical_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -95,9 +95,9 @@ panel_vertical_rightr_render:
     lda #<default_color_memory + 2 * 40 + 39
     sta panel_vertical_meta + 8   // targetColorPtr
     lda #<panel_vertical_meta
-    sta $f5
+    sta $fb
     lda #>panel_vertical_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -113,9 +113,9 @@ panel_footer_left_render:
     sta panel_header_meta + 9   // targetColorPtr
 
     lda #<panel_header_meta
-    sta $f5
+    sta $fb
     lda #>panel_header_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
@@ -131,17 +131,17 @@ panel_footer_right_render:
     sta panel_header_meta + 9   // targetColorPtr
 
     lda #<panel_header_meta
-    sta $f5
+    sta $fb
     lda #>panel_header_meta
-    sta $f6
+    sta $fc
     jsr render
     rts
 
 panel_content_left_render:
     lda #<panel_left_backend_meta
-    sta $f5
+    sta $fb
     lda #>panel_left_backend_meta
-    sta $f6
+    sta $fc
     lda #<panel_left_backend_data
     sta $f7
     lda #>panel_left_backend_data
@@ -152,9 +152,9 @@ panel_content_left_render:
 
 panel_content_right_render:
     lda #<panel_right_backend_meta
-    sta $f5
+    sta $fb
     lda #>panel_right_backend_meta
-    sta $f6
+    sta $fc
     lda #<panel_right_backend_data
     sta $f7
     lda #>panel_right_backend_data
@@ -167,17 +167,17 @@ activate_left_panel_func:
     lda #state_left_panel
     sta current_state
     lda #$28  // outline left panel
-    sta $f5
+    sta $fb
     lda #$d8
-    sta $f6
+    sta $fc
     lda #20
     sta activate_panel_horizontal_border_len + 1
     lda #$01  // white
     jsr activate_panel_horizontal_border
     lda #$3c  // outline right panel
-    sta $f5
+    sta $fb
     lda #$d8
-    sta $f6
+    sta $fc
     lda #20
     sta activate_panel_horizontal_border_len + 1
     lda #$0e  // light blue
@@ -190,17 +190,17 @@ activate_right_panel_func:
     lda #state_right_panel
     sta current_state
     lda #$28  // outline left panel
-    sta $f5
+    sta $fb
     lda #$d8
-    sta $f6
+    sta $fc
     lda #20
     sta activate_panel_horizontal_border_len + 1
     lda #$0e  // light blue
     jsr activate_panel_horizontal_border
     lda #$3c  // outline right panel
-    sta $f5
+    sta $fb
     lda #$d8
-    sta $f6
+    sta $fc
     lda #20
     sta activate_panel_horizontal_border_len + 1
     lda #$01  // white
@@ -211,7 +211,7 @@ activate_right_panel_func:
 
 /*
 Change background color from bg2 to bg3
-$f5, $f6: vector of char memory
+$fb/$fc: vector of char memory
 activate_panel_horizontal_border_len+1: length of input field
 X: <untouched>
 Y: <destroyed>
@@ -220,7 +220,7 @@ return: -
 */
 activate_panel_horizontal_border:
     ldy #$00
-!:  sta ($f5),y
+!:  sta ($fb),y
     iny
 activate_panel_horizontal_border_len:
     cpy #$ff  // updated real time
@@ -239,7 +239,7 @@ backend structure filedir entry
    bit 0-6: block pointing to dir/file table  (sector is always 0), values 28-127
    bit 7: is_selected flag
   byte 1: pointer to specific entry in the dir/file table
-$f5/$f6: panel_backend_meta pointer
+$fb/$fc: panel_backend_meta pointer
 $f7/$f8: panel_backend_data pointer
 
 return: -
@@ -247,14 +247,14 @@ return: -
 panel_backend_refresh:
     // init pointers to metadata
     cld
-    lda $f5  // lo nibble metadata pointer
+    lda $fb  // lo nibble metadata pointer
     sta pbr_curr_dir +1
     lda $f7  // lo nibble data pointer
     sta pbr_s1 +1
     sta pbr_s2 +1
     sta pbr_s3 +1
 
-    lda $f6  // hi nibble metadata pointer
+    lda $fc  // hi nibble metadata pointer
     sta pbr_curr_dir +2
     lda $f8  // hi nibble data pointer
     sta pbr_s1 +2
@@ -313,7 +313,7 @@ pbr_s3:
 pbr_current_block: .byte $00
 
 /* Use panel_backend_meta as dataprovider backend and render panel's main content
-$f5/$f6: panel_backend_meta pointer
+$fb/$fc: panel_backend_meta pointer
 $f7/$f8: panel_backend_data pointer
 */
 panel_content_render:
@@ -321,7 +321,7 @@ panel_content_render:
     cld
     // init pointers
     ldy #$03
-    lda ($f5), y  // lo nibble metadata pointer
+    lda ($fb), y  // lo nibble metadata pointer
     sta pcr_s2 + 1  // screen position first line
     sta pcr_s3 + 1  // screen position first line
     sta pcr_s4 + 1  // screen position first line
