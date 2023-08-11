@@ -176,7 +176,7 @@ create_file_parent_filename:
     cpx #$10
     bne !-
 create_file_hi_original_address:
-    lda #$00  // hi nibble of original memory address, can be used when downloading back to memory
+    lda #$ff  // hi nibble of original memory address, can be used when downloading back to memory
     sta ($fb), y
     iny
 cf_fat_sector_ptr:

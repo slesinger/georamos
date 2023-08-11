@@ -160,7 +160,6 @@ upload_from_memory_impl:
     bne ufmi_end
     
     /// TODO validate from, to, file, type
-    jsr input_line_empty_render
     // get $FROM address
     lda #state_upld_from        // convert "from" address to word
     jsr load_state_input_field_vector
@@ -193,6 +192,7 @@ upload_from_memory_impl:
     sta create_file_parent_filename +2
     jsr create_file  // > $fb/$fc sector/block of data to write
     jsr write_file
+    jsr input_line_empty_render  // input line disappears to acknowledge done
 ufmi_end:
     rts
 
@@ -220,63 +220,64 @@ dowload_to_memory_impl:
     inc $d020 // confirm done
     rts
 last_block_bytes: .byte $00
+
+
+
 /*
 function converts memory address reprented as string to word.
 $fb, $fc: vector of pointing to string
 return: $f7 lo nibble, $f8 hi nibble
 */
 memaddrstr_to_word:
+    cld
     ldy #$00  // $X...
     lda ($fb), y
-    cmp #$07
-    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
-    cld
-    sec
-    sbc #$30  // shift $30-$39 > $00-$09
-    jmp !++
-!:  adc #$09  // shift $01-$06 > $0a-$f
-!:  asl
+    jsr petscii2int
+    asl
     asl
     asl
     asl
     sta $f8
-    iny       // $.X..
+    iny
     lda ($fb), y
-    cmp #$07
-    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
-    cld
-    sec
-    sbc #$30  // shift $30-$39 > $00-$09
-    jmp !++
-!:  adc #$09  // shift $01-$06 > $0a-$f
-!:  ora $f8
+    jsr petscii2int
+    clc
+    adc $f8
     sta $f8
-    iny       // $..X.
+
+    iny
     lda ($fb), y
-    cmp #$07
-    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
-    cld
-    sec
-    sbc #$30  // shift $30-$39 > $00-$09
-    jmp !++
-!:  adc #$09  // shift $01-$06 > $0a-$f
-!:  asl
+    jsr petscii2int
+    asl
     asl
     asl
     asl
     sta $f7
-    iny       // $...X
+    iny
     lda ($fb), y
-    cmp #$07
-    bcc !+    // branch if < $07, then it is letter A=$01,..F=$06
-    cld
-    sec
-    sbc #$30  // shift $30-$39 > $00-$09
-    jmp !++
-!:  adc #$09  // shift $01-$06 > $0a-$f
-!:  ora $f7
+    jsr petscii2int
+    clc
+    adc $f7
     sta $f7
     rts
+
+/* Usefull when converting petscii encoded number as string. 
+A: petscii character
+X: <preserved>
+Y: <preserved>
+return: A: hex value
+*/
+petscii2int:
+    and #%11110000
+    cmp #%00110000  // is a number
+    bne !+  // is a letter
+    sec
+    sbc #$30  // shift $30-$39 > $00-$09
+    rts
+!:  sec
+    sbc #$36  // shift $41-$46 > $0a-$f
+    rts
+
 
 
 // Main GeoRAMOS initialization
