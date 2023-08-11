@@ -94,6 +94,17 @@ bootstrap_code:
     jsr init
     jmp menu
 
+// use jmp instead of jsr
+exit_to_basic_impl:
+    sei
+    lda #$37
+    sta $01             // Enable KERNAL and BASIC
+    cli
+    jsr $ff8a           // RESTOR: Initialize vector table $0314-$0333
+    jsr $ff81           // SCINIT: Initialize VIC++
+    jsr $ff84           // IOINIT: Initialize CIAs++
+    rts
+
 .text "END0!"
 
 memaddr_ptr: .word $0000
