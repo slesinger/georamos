@@ -234,6 +234,20 @@ load_state_input_field_vector:
     lda #>input_field_upld_type
     sta $fc
     jmp load_current_input_field_vector_end
+!:  cmp #state_dnld_to
+    bne !+
+    lda #<input_field_dnld_to
+    sta $fb
+    lda #>input_field_dnld_to
+    sta $fc
+    jmp load_current_input_field_vector_end
+!:  cmp #state_cdir_name
+    bne !+
+    lda #<input_field_cdir_name
+    sta $fb
+    lda #>input_field_cdir_name
+    sta $fc
+    jmp load_current_input_field_vector_end
 !:
 load_current_input_field_vector_end:
     rts
@@ -384,3 +398,16 @@ input_field_upld_type:  // metadata
     .byte 3  // length of input field
     .word input_field_upld_from  // pointer to next input field metadata
 
+input_field_dnld_to:  // metadata
+    .fill 16, $20  // buffer for data with spaces
+    .word $07a5  // pointer to char memory within $0400
+    .byte 00  // cursor position within field
+    .byte 4  // length of input field
+    .word input_field_dnld_to  // pointer to next input field metadata
+
+input_field_cdir_name:  // metadata
+    .fill 16, $20  // buffer for data with spaces
+    .word $07ad  // pointer to char memory within $0400
+    .byte 00  // cursor position within field
+    .byte 16  // length of input field
+    .word input_field_cdir_name  // pointer to next input field metadata

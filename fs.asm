@@ -219,7 +219,6 @@ wf_last_block:
     lda geo_copy_to_geo_last_block_bytes
     sta $fc
     jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
-    inc $d020 // confirm done
     rts
 write_file_current_block: .byte $ff
 write_file_count_blocks: .byte $ff

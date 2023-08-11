@@ -168,6 +168,22 @@ input_line_upld_render:
     jsr render
     rts
 
+input_line_dnld_render:
+    lda #<input_line_dnld_meta
+    sta $fb
+    lda #>input_line_dnld_meta
+    sta $fc
+    jsr render
+    rts
+
+input_line_cdir_render:
+    lda #<input_line_cdir_meta
+    sta $fb
+    lda #>input_line_cdir_meta
+    sta $fc
+    jsr render
+    rts
+
 actions_line_render:
     lda #<actions_line_meta
     sta $fb
@@ -214,6 +230,29 @@ input_line_upld_char_data:
 	.byte	$15, $10, $0C, $04, $20, $24, $60, $60, $60, $60, $2D, $60, $60, $60, $60, $20, $0E, $01, $0D, $05, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $20, $50, $52, $47
 input_line_upld_color_data:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+
+input_line_dnld_meta:
+    .byte   40, 1  // width, height
+    .word   input_line_dnld_char_data  // sourceCharPtr
+    .byte   default_screen_memory_lo + $98, default_screen_memory_hi + $03  // targetCharPtr
+    .word   input_line_dnld_color_data  // sourceColorPtr
+    .byte   default_color_memory_lo + $98, default_color_memory_hi + $03 // targetColorPtr
+input_line_dnld_char_data:
+	.byte	$04, $0f, $17, $0e, $0c, $0f, $01, $04, $20, $14, $0f, $20, $24, $60, $60, $60, $60, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
+input_line_dnld_color_data:
+	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+
+input_line_cdir_meta:
+    .byte   40, 1  // width, height
+    .word   input_line_cdir_char_data  // sourceCharPtr
+    .byte   default_screen_memory_lo + $98, default_screen_memory_hi + $03  // targetCharPtr
+    .word   input_line_cdir_color_data  // sourceColorPtr
+    .byte   default_color_memory_lo + $98, default_color_memory_hi + $03 // targetColorPtr
+input_line_cdir_char_data:
+	.byte	$03, $12, $05, $01, $14, $05, $20, $0e, $05, $17, $20, $04, $09, $12, $05, $03, $14, $0f, $12, $19, $3a, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $60, $20, $20, $20
+input_line_cdir_color_data:
+	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+
 
 actions_line_meta:
     .byte   40, 1  // width, height

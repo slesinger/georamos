@@ -33,6 +33,8 @@ state: .enum {
     state_upld_from, 
     state_upld_to, 
     state_upld_file, 
-    state_upld_type
+    state_upld_type,
+    state_dnld_to,
+    state_cdir_name
 }
 

@@ -64,7 +64,7 @@ move_file:
     jmp read_key
 
 create_dir:
-    inc $d021
+    jsr create_dir_impl
     jmp read_key
 
 delete_file:
@@ -197,31 +197,60 @@ ufmi_end:
     rts
 
 dowload_to_memory_impl:
-    lda #state_upld_from
-    jsr load_state_input_field_vector
-    jsr memaddrstr_to_word
-    lda $f7
-    sta geo_copy_from_trgPtr + 1
-    lda $f8
-    sta geo_copy_from_trgPtr + 2
+    jsr input_line_dnld_render
+    lda #state_dnld_to
+    sta current_state
+    jsr focus_input_field
+    cmp #$00                    // escape pressed - no action
+    bne !+
+    jsr input_line_empty_render
+    jsr activate_left_panel_func
+    jmp dfmi_end
+!:  cmp #$01                    // return pressed - download
+    bne dfmi_end
 
-    lda #state_upld_to
-    jsr load_state_input_field_vector
-    jsr memaddrstr_to_word
-    lda $f7  // lo nibble of $TO
-    sta last_block_bytes
-    lda $f8  // hi nibble of $TO
-    sec
-    sbc $f8  // $TO - $FROM = number of blocks to copy
-    tay
-    ldx #$01 //geo sector
-    lda #$00 //geo block
-    jsr geo_copy_from_geo
-    inc $d020 // confirm done
+
+    // lda #state_upld_from
+    // jsr load_state_input_field_vector
+    // jsr memaddrstr_to_word
+    // lda $f7
+    // sta geo_copy_from_trgPtr + 1
+    // lda $f8
+    // sta geo_copy_from_trgPtr + 2
+
+    // lda #state_upld_to
+    // jsr load_state_input_field_vector
+    // jsr memaddrstr_to_word
+    // lda $f7  // lo nibble of $TO
+    // sta last_block_bytes
+    // lda $f8  // hi nibble of $TO
+    // sec
+    // sbc $f8  // $TO - $FROM = number of blocks to copy
+    // tay
+    // ldx #$01 //geo sector
+    // lda #$00 //geo block
+    // jsr geo_copy_from_geo
+    // inc $d020 // confirm done
+    // jsr input_line_empty_render  // input line disappears to acknowledge done
+dfmi_end:
     rts
 last_block_bytes: .byte $00
 
-
+create_dir_impl:
+    jsr input_line_cdir_render
+    lda #state_cdir_name
+    sta current_state
+    jsr focus_input_field
+    cmp #$00                    // escape pressed - no action
+    bne !+
+    jsr input_line_empty_render
+    jsr activate_left_panel_func
+    jmp cfmi_end
+!:  cmp #$01                    // return pressed - download
+    bne cfmi_end
+cfmi_end:
+    // jsr input_line_empty_render  // input line disappears to acknowledge done
+    rts
 
 /*
 function converts memory address reprented as string to word.
@@ -260,24 +289,6 @@ memaddrstr_to_word:
     adc $f7
     sta $f7
     rts
-
-/* Usefull when converting petscii encoded number as string. 
-A: petscii character
-X: <preserved>
-Y: <preserved>
-return: A: hex value
-*/
-petscii2int:
-    and #%11110000
-    cmp #%00110000  // is a number
-    bne !+  // is a letter
-    sec
-    sbc #$30  // shift $30-$39 > $00-$09
-    rts
-!:  sec
-    sbc #$36  // shift $41-$46 > $0a-$f
-    rts
-
 
 
 // Main GeoRAMOS initialization

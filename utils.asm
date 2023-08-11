@@ -52,6 +52,25 @@ screen02petscii:
     rts
 
 
+/* Usefull when converting petscii encoded number as string. 
+A: petscii character
+X: <preserved>
+Y: <preserved>
+return: A: hex value
+*/
+petscii2int:
+    and #%11110000
+    cmp #%00110000  // is a number
+    bne !+  // is a letter
+    sec
+    sbc #$30  // shift $30-$39 > $00-$09
+    rts
+!:  sec
+    sbc #$36  // shift $41-$46 > $0a-$f
+    rts
+
+
+
 // Copy data from source memory pointer to georam
 // geo_copy_to_srcPtr + 1: source address
 // X: high byte of geo address 0-63
