@@ -182,6 +182,41 @@ activate_left_panel_func:
     sta activate_panel_horizontal_border_len + 1
     lda #$0e  // light blue
     jsr activate_panel_horizontal_border
+
+    lda #$70  // outline left panel
+    sta $fb
+    lda #$db
+    sta $fc
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$01  // white
+    jsr activate_panel_horizontal_border
+
+    lda #$84  // outline right panel
+    sta $fb
+    lda #$db
+    sta $fc
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$0e  // light blue
+    jsr activate_panel_horizontal_border
+
+    lda #2*40   /// line 3, column 1
+    sta activate_vertical_color_column + 1
+    lda #$01  // activate vertical lines
+    jsr activate_vertical_color
+    lda #2*40+19  // line 3, column 19
+    sta activate_vertical_color_column + 1
+    lda #$01  // white
+    jsr activate_vertical_color
+    lda #2*40+20  // line 3, column 20
+    sta activate_vertical_color_column + 1
+    lda #$0e  // light blue
+    jsr activate_vertical_color
+    lda #2*40+39  // line 3, column 39
+    sta activate_vertical_color_column + 1
+    lda #$0e  // light blue
+    jsr activate_vertical_color
     jsr panel_content_left_render
     // TODO render cursor
     rts
@@ -197,6 +232,7 @@ activate_right_panel_func:
     sta activate_panel_horizontal_border_len + 1
     lda #$0e  // light blue
     jsr activate_panel_horizontal_border
+
     lda #$3c  // outline right panel
     sta $fb
     lda #$d8
@@ -205,9 +241,72 @@ activate_right_panel_func:
     sta activate_panel_horizontal_border_len + 1
     lda #$01  // white
     jsr activate_panel_horizontal_border
+
+    lda #$70  // outline left panel
+    sta $fb
+    lda #$db
+    sta $fc
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$0e  // light blue
+    jsr activate_panel_horizontal_border
+
+    lda #$84  // outline right panel
+    sta $fb
+    lda #$db
+    sta $fc
+    lda #20
+    sta activate_panel_horizontal_border_len + 1
+    lda #$01  // white
+    jsr activate_panel_horizontal_border
+
+    lda #2*40   /// line 3, column 1
+    sta activate_vertical_color_column + 1
+    lda #$0e  // activate vertical lines
+    jsr activate_vertical_color
+    lda #2*40+19  // line 3, column 19
+    sta activate_vertical_color_column + 1
+    lda #$0e  // white
+    jsr activate_vertical_color
+    lda #2*40+20  // line 3, column 20
+    sta activate_vertical_color_column + 1
+    lda #$01  // light blue
+    jsr activate_vertical_color
+    lda #2*40+39  // line 3, column 39
+    sta activate_vertical_color_column + 1
+    lda #$01  // light blue
+    jsr activate_vertical_color
     jsr panel_content_right_render
     // TODO render cursor
     rts
+
+/* Highlight vertical lines in color ram
+A: vertical sign ! text color
+activate_verticals_color_column +1: column start
+return: -
+*/
+activate_vertical_color:
+    cld
+    pha
+    lda #$d8
+    sta activate_vertical_color_column +2  // is always $d8xx
+    pla
+    ldx #$00
+activate_vertical_color_column:
+    sta $d850
+    pha
+    clc
+    lda activate_vertical_color_column +1
+    adc #40
+    sta activate_vertical_color_column +1
+    bcc !+
+    inc activate_vertical_color_column +2
+!:  pla
+    inx
+    cpx #$14
+    bne activate_vertical_color_column
+    rts
+
 
 /*
 Change background color from bg2 to bg3
@@ -317,7 +416,6 @@ $fb/$fc: panel_backend_meta pointer
 $f7/$f8: panel_backend_data pointer
 */
 panel_content_render:
-.break
     cld
     // init pointers
     ldy #$03
