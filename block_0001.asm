@@ -207,12 +207,18 @@ dowload_to_memory_impl:
     jsr georam_set  // change to point to file table
     lda $fc  // entry pointer
     clc
-    adc #19  // skip first 19 bytes of filetable record to point sector pointer to first FAT
+    adc #18  // skip  to original address (+18) and (+19) bytes of filetable record to point sector pointer to first FAT
     tax
-    lda pagemem, x  TODO
+    lda pagemem, x  // first sector of file
+    sta dfmi_original_addr
+    inx // now point to first FAT
+    lda pagemem, x  // first sector of file
+    sta dfmi_current_sector
     inx
-    lda pagemem, x  TODO
-
+    lda pagemem, x  // first block of file
+    sta dfmi_current_block
+    // display download dialog
+// TODO make defailt value from dfmi_original_addr
     lda #state_dnld_to
     sta current_state
     jsr focus_input_field
@@ -223,39 +229,34 @@ dowload_to_memory_impl:
     jmp dfmi_end
 !:  cmp #$01                    // return pressed - download
     bne dfmi_end
-
-    lda #state_dnld_to        // convert "TO" address to word
+    lda #state_dnld_to          // convert "TO" address to word
     jsr load_state_input_field_vector
     jsr memaddrstr_to_word
     lda $f7
     sta geo_copy_from_trgPtr + 1  // set address for write_file will take data from memory
     lda $f8
     sta geo_copy_from_trgPtr + 2
-
     // loop over FAT entries and copy data to memory
+    ldx dfmi_current_sector
+    lda dfmi_current_block
+    ldy #$01 // copy 1 block
+    jsr geo_copy_from_geo  // download block to memory
+    // check if this is last block   // TODO check this in advance in order to copy last block partially as needed
+    // if not last block
+    // increase memory
+    // get next FAT record
+    // repeat
+    // if last block
+    jmp dfmi_end
 
-// X: high byte of geo sector 0-63
-// A: low byte of geo block 0-255
-// Y: number of blocks to copy
 
-    // lda #state_upld_to
-    // jsr load_state_input_field_vector
-    // jsr memaddrstr_to_word
-    // lda $f7  // lo nibble of $TO
-    // sta last_block_bytes
-    // lda $f8  // hi nibble of $TO
-    // sec
-    // sbc $f8  // $TO - $FROM = number of blocks to copy
-    // tay
-    // ldx #$01 //geo sector
-    // lda #$00 //geo block
-    // jsr geo_copy_from_geo
-    inc $d020 // confirm done
-    jsr input_line_empty_render  // input line disappears to acknowledge done
 dfmi_end:
+    jsr input_line_empty_render  // input line disappears to acknowledge done
     rts
 last_block_bytes: .byte $00
-
+dfmi_current_sector: .byte $00
+dfmi_current_block: .byte $00
+dfmi_original_addr: .byte $00
 
 create_dir_impl:
     jsr input_line_cdir_render
