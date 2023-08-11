@@ -209,14 +209,20 @@ dowload_to_memory_impl:
 !:  cmp #$01                    // return pressed - download
     bne dfmi_end
 
+    lda #state_dnld_to        // convert "TO" address to word
+    jsr load_state_input_field_vector
+    jsr memaddrstr_to_word
+    lda $f7
+    sta geo_copy_from_trgPtr + 1  // set address for write_file will take data from memory
+    lda $f8
+    sta geo_copy_from_trgPtr + 2
 
-    // lda #state_upld_from
-    // jsr load_state_input_field_vector
-    // jsr memaddrstr_to_word
-    // lda $f7
-    // sta geo_copy_from_trgPtr + 1
-    // lda $f8
-    // sta geo_copy_from_trgPtr + 2
+    jsr get_filetable_entry_of_file_under_cursor
+    // loop over FAT entries and copy data to memory
+    
+// X: high byte of geo sector 0-63
+// A: low byte of geo block 0-255
+// Y: number of blocks to copy
 
     // lda #state_upld_to
     // jsr load_state_input_field_vector
@@ -230,8 +236,8 @@ dowload_to_memory_impl:
     // ldx #$01 //geo sector
     // lda #$00 //geo block
     // jsr geo_copy_from_geo
-    // inc $d020 // confirm done
-    // jsr input_line_empty_render  // input line disappears to acknowledge done
+    inc $d020 // confirm done
+    jsr input_line_empty_render  // input line disappears to acknowledge done
 dfmi_end:
     rts
 last_block_bytes: .byte $00

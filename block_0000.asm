@@ -56,8 +56,8 @@ geo_copy_common_init:
 
 // Copy data from georam to target memory pointer
 // geo_copy_from_trgPtr + 1: source address
-// X: high byte of geo address 0-63
-// A: low byte of geo address 0-255
+// X: high byte of geo sector 0-63
+// A: low byte of geo block 0-255
 // Y: number of blocks to copy
 geo_copy_from_geo:
     jsr geo_copy_common_init
