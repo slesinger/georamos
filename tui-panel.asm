@@ -218,7 +218,15 @@ activate_left_panel_func:
     lda #$0e  // light blue
     jsr activate_vertical_color
     jsr panel_content_left_render
-    // TODO render cursor
+    
+    // jsr deactive_cursor
+    lda #<panel_left_backend_meta
+    sta $fb
+    lda #>panel_left_backend_meta
+    sta $fc
+    lda #%11000000  // cyan
+    sta render_cursor_color +1
+    jsr render_cursor
     rts
 
 activate_right_panel_func:
@@ -277,8 +285,97 @@ activate_right_panel_func:
     lda #$01  // light blue
     jsr activate_vertical_color
     jsr panel_content_right_render
-    // TODO render cursor
+
+    // jsr deactive_cursor
+    lda #<panel_right_backend_meta
+    sta $fb
+    lda #>panel_right_backend_meta
+    sta $fc
+    lda #%11000000  // cyan
+    sta render_cursor_color +1
+    jsr render_cursor
     rts
+
+/* Show cursor
+$fb/$fc: vector of of panel_backend_meta structure
+A: <preserved>
+return: -
+*/
+render_cursor:
+    pha
+    // get cursor position from metadata
+    ldy #$01  // cursor position
+    lda ($fb), y
+    // calculate position of cursor on screen > $f7/$f8
+    sta mmba_a
+    lda #40
+    sta mmba_b
+    jsr math_multiply_by_adding  // cursor position * 40 chars per line > mmba_result
+    ldy #$03  // lo nibble of left top corner of panel content
+    lda ($fb), y
+    clc
+    adc mmba_result
+    sta $f7  // lo nibble pointer to screen memory
+    lda #$04
+    adc mmba_result+1  // carry is preserved from lo nibble adding
+    sta $f8  // hi nibble pointer to screen memory
+    // figure out color of cursor
+    // render cursor
+    ldy #$00
+!:  lda ($f7), y
+    and #%00111111  // remove background color
+render_cursor_color:
+    ora #$ff  //set background color
+    sta ($f7), y
+    iny
+    cpy #18
+    bne !-
+    pla
+    rts
+
+
+/* Move cursor down
+$fb/$fc: vector of of panel_backend_meta structure
+return: -
+*/
+panel_cursor_down:
+    ldy #$01  // cursor position
+    lda ($fb), y
+    cmp #19  // last line
+    bne !+
+    rts
+!:  ldy #%00000000  // blue
+    sty render_cursor_color +1
+    jsr render_cursor
+    tay
+    iny
+    tya
+    ldy #$01
+    sta ($fb), y  // increase cursor position
+    lda #%11000000  // cyan
+    sta render_cursor_color +1
+    jsr render_cursor
+    rts
+
+panel_cursor_up:
+    ldy #$01  // cursor position
+    lda ($fb), y
+    cmp #$00  // last line
+    bne !+
+    rts
+!:  ldy #%00000000  // blue
+    sty render_cursor_color +1
+    jsr render_cursor
+    tay
+    dey
+    tya
+    ldy #$01
+    sta ($fb), y  // increase cursor position
+    lda #%11000000  // cyan
+    sta render_cursor_color +1
+    jsr render_cursor
+    rts
+
 
 /* Highlight vertical lines in color ram
 A: vertical sign ! text color
@@ -543,7 +640,19 @@ panel_vertical_char_data:
 panel_vertical_color_data:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
+panel_left_backend_meta_vector:
+    lda #<panel_left_backend_meta
+    sta $fb
+    lda #>panel_left_backend_meta
+    sta $fc
+    rts
 
+panel_right_backend_meta_vector:
+    lda #<panel_right_backend_meta
+    sta $fb
+    lda #>panel_right_backend_meta
+    sta $fc
+    rts
 
 panel_left_backend_meta:
     panel_left_current_dir: .byte $00  // root dir "/" id is $00

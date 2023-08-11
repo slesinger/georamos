@@ -85,11 +85,11 @@ exit_to_basic:
     jmp exit_to_basic_impl
 
 arrow_up_handler:
-    inc $d021
+    jsr arrow_up_handler_impl
     jmp read_key
 
 arrow_down_handler:
-    inc $d021
+    jsr arrow_down_handler_impl
     jmp read_key
 
 arrow_right_handler:
@@ -126,6 +126,32 @@ exit_to_basic_impl:
     jsr $ff8a           // RESTOR: Initialize vector table $0314-$0333
     jsr $ff81           // SCINIT: Initialize VIC++
     jsr $ff84           // IOINIT: Initialize CIAs++
+    rts
+
+arrow_up_handler_impl:
+    lda current_state
+    cmp #state_left_panel
+    bne !+
+    jsr panel_left_backend_meta_vector
+    jsr panel_cursor_up
+    rts
+!:  cmp #state_right_panel
+    bne !+
+    jsr panel_right_backend_meta_vector
+    jsr panel_cursor_up
+    rts
+
+arrow_down_handler_impl:
+    lda current_state
+    cmp #state_left_panel
+    bne !+
+    jsr panel_left_backend_meta_vector
+    jsr panel_cursor_down
+    rts
+!:  cmp #state_right_panel
+    bne !+
+    jsr panel_right_backend_meta_vector
+    jsr panel_cursor_down
     rts
 
 
