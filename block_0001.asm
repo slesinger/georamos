@@ -196,8 +196,23 @@ upload_from_memory_impl:
 ufmi_end:
     rts
 
+
 dowload_to_memory_impl:
     jsr input_line_dnld_render
+    lda current_state
+    jsr load_state_panel_vector  // > $fb/$fc panel metadata
+    jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, sector 0
+    lda #$00  // sector 0
+    ldx $fb  // block 0-255
+    jsr georam_set  // change to point to file table
+    lda $fc  // entry pointer
+    clc
+    adc #19  // skip first 19 bytes of filetable record to point sector pointer to first FAT
+    tax
+    lda pagemem, x  TODO
+    inx
+    lda pagemem, x  TODO
+
     lda #state_dnld_to
     sta current_state
     jsr focus_input_field
@@ -217,9 +232,8 @@ dowload_to_memory_impl:
     lda $f8
     sta geo_copy_from_trgPtr + 2
 
-    jsr get_filetable_entry_of_file_under_cursor
     // loop over FAT entries and copy data to memory
-    
+
 // X: high byte of geo sector 0-63
 // A: low byte of geo block 0-255
 // Y: number of blocks to copy
@@ -241,6 +255,7 @@ dowload_to_memory_impl:
 dfmi_end:
     rts
 last_block_bytes: .byte $00
+
 
 create_dir_impl:
     jsr input_line_cdir_render

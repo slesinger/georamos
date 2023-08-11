@@ -56,15 +56,15 @@ Maximum directories: 60
 Maximum files in directory: 128
 
 Record is fixed length (20bytes):
-- 0B  directory id is implicit by its position, needed for linking as parent directory
-- 1B  file flags / parent directory id
-  - 6bits  parent directory id
-  - 2bits  file flags
-- 1B  size in blocks (block=256bytes, max 256)
-- 16B filename, max 16chars, filled with blank spaces
-- 1B hi nibble of original memory address !!!!!!! Make sure length 21 of the record is updated everywhere in the code !!!!!!
-- 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
-- 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
+( 0) - 0B  directory id is implicit by its position, needed for linking as parent directory
+( 0) - 1B  file flags / parent directory id
+       - 6bits  parent directory id
+       - 2bits  file flags
+( 1) - 1B  size in blocks (block=256bytes, max 256)
+( 2) - 16B filename, max 16chars, filled with blank spaces
+(18) - 1B hi nibble of original memory address !!!!!!! Make sure length 21 of the record is updated everywhere in the code !!!!!!
+(19) - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
+(20) - 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
 
 First 5 blocks -> 60 entries is reserved for directories.
 Very first record is root directory /.

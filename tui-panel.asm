@@ -605,6 +605,59 @@ file_flags2type:
 !:  lda #$20  // space
     rts
 
+/*
+Load pointer $fb/$fc to input field vector metadata indicated in A
+A: state, see state .enum
+return: $fb/$fc: vector of panel metadata
+*/
+load_state_panel_vector:
+    cmp #state_left_panel
+    bne !+
+    lda #<panel_left_backend_meta
+    sta $fb
+    lda #>panel_left_backend_meta
+    sta $fc
+    jmp lspv_end
+!:  cmp #state_right_panel
+    bne !+
+    lda #<panel_right_backend_meta
+    sta $fb
+    lda #>panel_right_backend_meta
+    sta $fc
+    jmp lspv_end
+!:
+lspv_end:
+    rts
+
+
+/* Get filetable entry of file under cursor of active panel
+input: $fb/$fc: vector of panel metadata
+return: $fb/$fc: vector pointing to filetable entry: sector=0, block=$fb, pointer to entry=$fc
+*/
+get_filetable_entry_of_file_under_cursor:
+    ldy #$01  // cursor position info
+    lda ($fb), y  // a = cursor position within panel
+    tax  // save cursor position
+    // TODO calculate cursor position within data backend (which is scrollable), now I assume curpos in panel == selected file in backend
+    // hange $fb/$fc vector to point to backend data
+    lda $fb  // lo nibble metadata pointer
+    clc
+    adc #$04 // derive pointer to backend data
+    sta $fb
+    bcc !+  // no carry, no overflow, no need to increase hi nibble
+    inc $fc // increment hi nibble also
+!:  // point to backend data
+    txa
+    asl  // backend data is 2 bytes per entry
+    tay
+    lda ($fb), y  // sector=0, block=a=x
+    tax
+    iny
+    lda ($fb), y  // a=pointer to entry in dir/file table
+    stx $fb
+    sta $fc
+    rts
+
 
 panel_header_meta:
     .byte   20, 1  // width, height
@@ -647,7 +700,7 @@ panel_left_backend_meta:
     panel_left_cursor_position: .byte $00
     panel_left_scroll_position: .byte $00
     panel_left_first_screen_line: .byte $51
-panel_left_backend_data: .fill 2*128, $00
+panel_left_backend_data: .fill 2*128, $00   // 128 entries of 1B block, 1B pointer to entry in dir/file table
 
 panel_right_backend_meta:
     panel_right_current_dir: .byte $00  // root dir "/" id is $00
