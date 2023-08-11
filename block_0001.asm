@@ -108,19 +108,12 @@ next_input_handler:
     lda current_state
 !:  cmp #state_left_panel
     bne !+
-    jsr load_current_input_field_vector
-    jsr deactivate_input_field
-    lda #state_upld_to  // new input field
-    sta current_state
-    jsr focus_input_field
+    jsr activate_right_panel_func
+    jmp read_key
     // if state is right panel, then activate left panel
 !:  cmp #state_right_panel
     bne !+
-    jsr load_current_input_field_vector
-    jsr deactivate_input_field
-    lda #state_upld_to  // new input field
-    sta current_state
-    jsr focus_input_field
+    jsr activate_left_panel_func
     jmp read_key
 
 
@@ -384,7 +377,7 @@ fw_upload_ok:
 
 
 // State of the program
-current_state: .byte $00
+current_state: .byte $00  // see shared.asm state
 left_panel_cursor_pos: .byte $00
 right_panel_cursor_pos: .byte $00
 current_dir_id: .byte $00

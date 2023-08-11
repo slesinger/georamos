@@ -42,6 +42,7 @@ menu_screen_init:
     jsr actions_line_render
     jsr panel_content_left_render
     jsr panel_content_right_render
+    jsr activate_left_panel_func
     rts
 
 /*

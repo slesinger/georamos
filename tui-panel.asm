@@ -151,6 +151,16 @@ panel_content_left_render:
     rts
 
 panel_content_right_render:
+    lda #<panel_right_backend_meta
+    sta $f5
+    lda #>panel_right_backend_meta
+    sta $f6
+    lda #<panel_right_backend_data
+    sta $f7
+    lda #>panel_right_backend_data
+    sta $f8
+    jsr panel_backend_refresh
+    jsr panel_content_render
     rts
 
 activate_left_panel_func:
@@ -213,33 +223,9 @@ activate_panel_horizontal_border:
 !:  sta ($f5),y
     iny
 activate_panel_horizontal_border_len:
-    // cpy #input_upld_from_len  // updated real time
-    // bne !-
+    cpy #$ff  // updated real time
+    bne !-
     rts
-
-
-
-panel_header_meta:
-    .byte   20, 1  // width, height
-    .word   panel_header_char_data  // sourceCharPtr
-    .word   default_screen_memory  // targetCharPtr
-    .word   panel_header_color_data  // sourceColorPtr
-    .word   default_color_memory  // targetColorPtr
-panel_header_char_data:
-	.byte	$2B, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
-panel_header_color_data:
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-
-panel_vertical_meta:
-    .byte   1, 20  // width, height
-    .word   panel_vertical_char_data  // sourceCharPtr
-    .word   default_screen_memory  // targetCharPtr
-    .word   panel_vertical_color_data  // sourceColorPtr
-    .word   default_color_memory  // targetColorPtr
-panel_vertical_char_data:
-    .byte   $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21
-panel_vertical_color_data:
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
 
 
@@ -331,6 +317,7 @@ $f5/$f6: panel_backend_meta pointer
 $f7/$f8: panel_backend_data pointer
 */
 panel_content_render:
+.break
     cld
     // init pointers
     ldy #$03
@@ -434,6 +421,31 @@ file_flags2type:
     rts
 !:  lda #$20  // space
     rts
+
+
+panel_header_meta:
+    .byte   20, 1  // width, height
+    .word   panel_header_char_data  // sourceCharPtr
+    .word   default_screen_memory  // targetCharPtr
+    .word   panel_header_color_data  // sourceColorPtr
+    .word   default_color_memory  // targetColorPtr
+panel_header_char_data:
+	.byte	$2B, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
+panel_header_color_data:
+	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+
+panel_vertical_meta:
+    .byte   1, 20  // width, height
+    .word   panel_vertical_char_data  // sourceCharPtr
+    .word   default_screen_memory  // targetCharPtr
+    .word   panel_vertical_color_data  // sourceColorPtr
+    .word   default_color_memory  // targetColorPtr
+panel_vertical_char_data:
+    .byte   $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21
+panel_vertical_color_data:
+	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+
+
 
 panel_left_backend_meta:
     panel_left_current_dir: .byte $00  // root dir "/" id is $00
