@@ -16,9 +16,9 @@ Find ```georamos``` image in root folder. Its size must be 4194304 bytes.
 
 ## Usage
 
-After poweroff, first, do bootstrap by ```SYS 57080```.
+After poweroff, first, do bootstrap by ```SYS 57077```.
 
-Then, anytime, enter GeoRAMOS menu by ```SYS 49408```.
+Then, anytime, enter GeoRAMOS menu by ```SYS 49400```.
 
 ## Key bindings
 1    Help

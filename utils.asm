@@ -50,3 +50,26 @@ screen02petscii:
     adc #$40  // add $40 to convert to uppercase
     plp
     rts
+
+
+// Copy data from source memory pointer to georam
+// geo_copy_to_srcPtr + 1: source address
+// X: high byte of geo address 0-63
+// A: low byte of geo address 0-255
+// Y: number of pages to copy
+geo_copy_to_geo:
+    jsr geo_copy_common_init
+    sty j1 + 1
+    ldy #$00
+geo_copy_to_srcPtr:
+    lda $ffff,x  // $1000 is fake address, it will be replaced by real address
+    sta pagemem,x
+    inx
+    bne geo_copy_to_srcPtr
+    iny
+    jsr georam_next
+    inc geo_copy_to_srcPtr+2
+j1: cpy #$ff   // is fake, it will be replaced by real number of blocks
+    bne geo_copy_to_srcPtr 
+    rts
+geo_copy_to_geo_last_block_bytes: .byte $00

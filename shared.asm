@@ -1,13 +1,14 @@
 #importonce
 
+// Only definitions here, no code that occupies memory
 
 // Memory
 .const page00 = $c000
 .const page00_lo = $00
 .const page00_hi = $c0
 .const page00_end = $c0ff
-.const page01 = $c100
-.const page01_hi = $c1
+.const page01 = $a000
+.const page01_hi = $a0
 .const default_screen_memory = $0400
 .const default_screen_memory_lo = $00
 .const default_screen_memory_hi = $04

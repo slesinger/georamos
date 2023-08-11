@@ -1,12 +1,6 @@
 #importonce
 #import "shared.asm"
 
-// #if !BOOTBLOCK_DEVELOPMENT
-    // .segment block_0001
-// #endif
-
-// *=$c350 "Menu vector 50000" // helper to jump to menu on nice decimal address
-//     jmp $c100
 
 *=page01 "menu"
     jsr menu_screen_init  // all registers destroyed
@@ -295,10 +289,6 @@ memaddrstr_to_word:
     sta $f7
     rts
 
-
-menu_dev:      // called after running from vs code to skip download from GeoRAM
-    jsr init
-    jmp menu
 
 // Main GeoRAMOS initialization
 // X: <preserved>

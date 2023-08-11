@@ -138,10 +138,7 @@ panel_footer_right_render:
     rts
 
 panel_content_left_render:
-    lda #<panel_left_backend_meta
-    sta $fb
-    lda #>panel_left_backend_meta
-    sta $fc
+    jsr panel_left_backend_meta_vector
     lda #<panel_left_backend_data
     sta $f7
     lda #>panel_left_backend_data
@@ -151,10 +148,7 @@ panel_content_left_render:
     rts
 
 panel_content_right_render:
-    lda #<panel_right_backend_meta
-    sta $fb
-    lda #>panel_right_backend_meta
-    sta $fc
+    jsr panel_right_backend_meta_vector
     lda #<panel_right_backend_data
     sta $f7
     lda #>panel_right_backend_data
@@ -220,10 +214,7 @@ activate_left_panel_func:
     jsr panel_content_left_render
     
     // jsr deactive_cursor
-    lda #<panel_left_backend_meta
-    sta $fb
-    lda #>panel_left_backend_meta
-    sta $fc
+    jsr panel_left_backend_meta_vector
     lda #%11000000  // cyan
     sta render_cursor_color +1
     jsr render_cursor
@@ -287,10 +278,7 @@ activate_right_panel_func:
     jsr panel_content_right_render
 
     // jsr deactive_cursor
-    lda #<panel_right_backend_meta
-    sta $fb
-    lda #>panel_right_backend_meta
-    sta $fc
+    jsr panel_right_backend_meta_vector
     lda #%11000000  // cyan
     sta render_cursor_color +1
     jsr render_cursor

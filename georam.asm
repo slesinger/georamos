@@ -7,7 +7,7 @@
 #import "shared.asm"
 
 #if BOOTBLOCK_DEVELOPMENT
-    BasicUpstart2(menu_dev)
+    BasicUpstart2(menu_jumper)
 #endif
 
 #if UPLOAD_FIRMWARE
