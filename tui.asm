@@ -11,9 +11,6 @@ menu_screen_init:
 	// disable SHIFT-Commodore
 	lda #$80
 	sta $0291
-	// set screen memory ($0400) and charset bitmap offset ($2000)
-	// lda #$18
-	// sta $D018
 	// set border color
 	lda #$0E
 	sta $D020

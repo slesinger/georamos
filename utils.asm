@@ -59,13 +59,16 @@ Y: <preserved>
 return: A: hex value
 */
 petscii2int:
+    pha
     and #%11110000
     cmp #%00110000  // is a number
     bne !+  // is a letter
+    pla
     sec
     sbc #$30  // shift $30-$39 > $00-$09
     rts
-!:  sec
+!:  pla
+    sec
     sbc #$36  // shift $41-$46 > $0a-$f
     rts
 
@@ -92,3 +95,4 @@ j1: cpy #$ff   // is fake, it will be replaced by real number of blocks
     bne geo_copy_to_srcPtr 
     rts
 geo_copy_to_geo_last_block_bytes: .byte $00
+

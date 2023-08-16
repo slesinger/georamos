@@ -21,16 +21,16 @@
 
 ## Boot block
 
-Boot block (block 0) contains code that copies bootstrapping code to botstrap address $C000.
+Boot block (block 0) contains code that copies bootstrapping code to botstrap address $cf00.
 
-Bootstrapping code will control what block is paged into IO1 memory space. Bootstrap will page all other blocks that form GeoRAMOS and copies them to $C100
+Bootstrapping code will control what block is paged into IO1 memory space. Bootstrap will page all other blocks that form GeoRAMOS and copies them to $c100
 
 ### Zero block schema
 
 ```
 copy_bootstrap:  (=$00)
-    copy bootstrap_code > $c000, until bootstrap_end is reached
-    jump to $c000
+    copy bootstrap_code > $cf00, until bootstrap_end is reached
+    jump to $cf09
 
 bootstrap_code:
     page in block 1 -7
@@ -62,7 +62,7 @@ Record is fixed length (20bytes):
        - 2bits  file flags
 ( 1) - 1B  size in blocks (block=256bytes, max 256)
 ( 2) - 16B filename, max 16chars, filled with blank spaces
-(18) - 1B hi nibble of original memory address !!!!!!! Make sure length 21 of the record is updated everywhere in the code !!!!!!
+(18) - 1B hi nibble of original memory address
 (19) - 1B  sector pointer to first "FAT sector pointer table"/"FAT block pointer table" record (values 1-63)
 (20) - 1B  block pointer to first "FAT sector pointer table"/"FAT block pointer table" record
 
@@ -89,7 +89,8 @@ Maximum fat records: 1280
 Position of FAT record in "FAT sector pointer table" and "FAT block pointer table" (same in both) reflects position of data block.
 
 #### FAT sector pointer table
-- 1B sector of next block or in case last record of the file it is $00 - organized as "FAT sector pointer table"
+- 1B sector of next block
+  In case it is the last record of the file, value is $00
 
 #### FAT block pointer table
 - 1B block of next block  or in case last record of the file number of bytes belonging from the block - organized as "FAT block pointer table"

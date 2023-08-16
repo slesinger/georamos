@@ -2,7 +2,7 @@
 #import "shared.asm"
 
 
-// This must be target execution address in spite it will be copied from page 0 to $c000
+// This must be target execution address in spite it will be copied from page 0 to $cf00
 *=page00 "copy_bootstrap" // good for entering GeoRAMOS menu by SYS 51200?
     jmp menu
 
@@ -10,11 +10,14 @@
 
 copy_bootstrap:
 
-// This code will be finally executed from $de00 (inspite assembled for $c000). 
+// This code will be finally executed from $de00 (inspite assembled for $cf00). 
 // Hence absolute jump with the code are allowed.
 
-    // copy bootstrap from $de00 to $c000
+    // copy bootstrap from $de00 to $cf00
+    lda #$00
     ldx #$00
+    stx georam_sector
+    stx geomem_sector
 !:  lda pagemem,x
     sta bootstrap,x
     inx
@@ -71,12 +74,12 @@ geo_copy_from_trgPtr:
     iny
     jsr georam_next
     inc geo_copy_from_trgPtr+2
-j2: cpy #$1   // is fake, it will be replaced by real number of blocks
+j2: cpy #$ff   // is fake, it will be replaced by real number of blocks
     bne geo_copy_from_trgPtr - 3
     rts
 
 
-// This code is executed from $c000 already after bootstrap is copied from $de00
+// This code is executed from $cf00 already after bootstrap is copied from $de00
 // Absolute jump with the code are allowed.
 bootstrap_code:
     // disable basic
@@ -89,7 +92,7 @@ bootstrap_code:
     sta geo_copy_from_trgPtr + 2
     ldx #$00 //geo sector
     lda #$01 //geo block
-    ldy #$0e //copy n pages
+    ldy #$1a //copy n pages
     jsr geo_copy_from_geo
     jsr init
     jmp menu
@@ -105,17 +108,25 @@ exit_to_basic_impl:
     jsr $ff84           // IOINIT: Initialize CIAs++
     rts
 
+// This is needed to disable basic from non-basic area before using firmware upload finction that is within the basic area.
+firmware_upload_init:
+    lda #$36
+    sta $01
+    jsr firmware_upload
+    rts
+
 .text "END0!"
 
 memaddr_ptr: .word $0000
 sector_ptr: .word $0000
 block_ptr: .word $0000
 
-*=$c0f5 "Bootstrap vector 49397" // helper to bootstrap with SYS 57077  (SYS 49397)
+*=$cff5 "Bootstrap vector 49397" // helper to bootstrap with SYS 57077  (SYS 49397)
+
     jmp $de09
 
 menu_jumper:
-*=$c0f8 "Menu vector 49400" // helper to jump to menu with SYS 49400
+*=$cff8 "Menu vector 49400" // helper to jump to menu with SYS 49400
     // disable basic
     lda #$36
     sta $01

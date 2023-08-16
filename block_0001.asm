@@ -69,6 +69,7 @@ create_dir:
 
 delete_file:
     inc $d021
+    jsr firmware_upload  // !!!!!!!!!!!!!!!!!!!!!!!!! This is temporary
     jmp read_key
 
 menu_drop:
@@ -213,10 +214,10 @@ dowload_to_memory_impl:
     sta dfmi_original_addr
     inx // now point to first FAT
     lda pagemem, x  // first sector of file
-    sta dfmi_current_sector
+    sta dfmi_next_sector
     inx
     lda pagemem, x  // first block of file
-    sta dfmi_current_block
+    sta dfmi_next_block
     // display download dialog
 // TODO make defailt value from dfmi_original_addr
     lda #state_dnld_to
@@ -236,27 +237,77 @@ dowload_to_memory_impl:
     sta geo_copy_from_trgPtr + 1  // set address for write_file will take data from memory
     lda $f8
     sta geo_copy_from_trgPtr + 2
+
     // loop over FAT entries and copy data to memory
+dfmi_loop:
+    lda dfmi_next_sector
+    sta dfmi_current_sector
+    lda dfmi_next_block
+    sta dfmi_current_block
+    jsr resolve_next_sector_block // check if this is last block   //!!!!!!!!!!!!!!!!! TODO check this in advance in order to copy last block partially as needed
+    lda dfmi_next_sector
+    cmp #$00
+    beq dfmi_last_block
     ldx dfmi_current_sector
     lda dfmi_current_block
     ldy #$01 // copy 1 block
-    jsr geo_copy_from_geo  // download block to memory
-    // check if this is last block   // TODO check this in advance in order to copy last block partially as needed
+    jsr geo_copy_from_geo  // download block to memory, this is the actual work
     // if not last block
-    // increase memory
-    // get next FAT record
-    // repeat
+    // inc geo_copy_from_trgPtr + 2   // increase target memory hi nibble
+    jmp dfmi_loop  // repeat
     // if last block
-    jmp dfmi_end
-
-
+dfmi_last_block:
+    ldx dfmi_current_block
+    lda dfmi_current_sector
+    jsr georam_set  // change to point to file table
+    lda geo_copy_from_trgPtr +1
+    sta dfmi_trgPtr +1
+    lda geo_copy_from_trgPtr +2
+    sta dfmi_trgPtr +2
+    lda dfmi_next_block  // contains number of bytes to copy within last block
+    sta dfmi_last_block_bytes +1
+    ldx #$FF  // copy remaining bytes in last block
+!:  inx
+    lda pagemem, x
+dfmi_trgPtr:
+    sta $ffff,x
+dfmi_last_block_bytes:
+    cpx #$ff
+    bne !-
 dfmi_end:
     jsr input_line_empty_render  // input line disappears to acknowledge done
     rts
-last_block_bytes: .byte $00
 dfmi_current_sector: .byte $00
 dfmi_current_block: .byte $00
 dfmi_original_addr: .byte $00
+dfmi_next_sector: .byte $00
+dfmi_next_block: .byte $00
+
+/* Populate dfmi_next_sector and dfmi_next_block with next FAT record
+input: dfmi_current_sector, dfmi_current_block
+return: dfmi_next_sector, dfmi_next_block
+*/
+resolve_next_sector_block:
+    lda dfmi_current_sector
+    ora #%10000000  // +128
+    tax  // block 128-190: FAT sector pointer table (63 blocks)
+    dex
+    lda #$00  // sector 0
+    jsr georam_set  // change to point to file table
+    ldy dfmi_current_block
+    lda pagemem, y  // get next sector
+    sta dfmi_next_sector
+    lda dfmi_current_sector
+    ora #%11000000  // +192
+    tax  // block 192-254: FAT block pointer table (63 blocks)
+    dex
+    lda #$00  // sector 0
+    jsr georam_set  // change to point to file table
+    ldy dfmi_current_block
+    lda pagemem, y  // get next sector
+    sta dfmi_next_block
+    rts
+
 
 create_dir_impl:
     jsr input_line_cdir_render
@@ -353,8 +404,8 @@ georam_set_fbfc:
     pla
     rts
 
-/* upload firmware $c000-$cfff to georam sector 0 block 0
-   copy this fresh compiled firmware from $c000 to $cfff to georamos image
+/* upload firmware $a000-$bfff to georam sector 0 block 0
+   copy this fresh compiled firmware from ram to georamos image
    other content of the images stays intact
 input: -
 return: -
@@ -364,9 +415,10 @@ firmware_upload:
     lda $de00
     cmp #$ff
     bne fu_all_clear
+    // fill whole georam with $00
 	lda #<fu_memclean
 	ldy #>fu_memclean
-	jsr PRINT_NSTR
+	// jsr PRINT_NSTR  turned off due to calling basic when switched off
     lda #$00
     ldx #$00
     jsr georam_set  // start at sector 0, block 0
@@ -390,21 +442,28 @@ fu_st:
     bne fu_st
 
 fu_all_clear:
-    // upload firmware
-    lda #$00
-    ldx #$00
-    jsr georam_set  // start at sector 0, block 0
+    // upload block0
     lda #page00_lo
     sta geo_copy_to_srcPtr + 1
     lda #page00_hi
     sta geo_copy_to_srcPtr + 2
     ldx #$00  // sector 0
     lda #$00  // block 0
-    ldy #$10  // 16 pages ~ c000-cfff
+    ldy #$01  // 1 page at $cf00
+    jsr geo_copy_to_geo
+    // upload rest of firmware
+    lda #page00_lo
+    sta geo_copy_to_srcPtr + 1
+    lda #page01_hi
+    sta geo_copy_to_srcPtr + 2
+    ldx #$00  // sector 0
+    lda #$01  // block 0
+    ldy #26  // 26 pages ~ a000-baff
     jsr geo_copy_to_geo
 	lda #<fw_upload_ok
 	ldy #>fw_upload_ok
-	jsr PRINT_NSTR
+	// jsr PRINT_NSTR  vypnuto cause calling basic when switched off
+    rts
 	rts
 fu_memclean:
     .text "CLEANING GEORAM MEMORY "

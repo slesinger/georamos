@@ -1,5 +1,11 @@
 # GeoRAMOS
 
+
+upload da do FAT 17 zaznamu, mam byt jen 16
+  posledni sector ma byt 0 ale je tam 1
+  posledni block ma byt ff ale je tam 10
+
+
 The OS booting from GeoRAM
 
 ## Features
@@ -15,10 +21,17 @@ Before building georamos image, make sure that ```BOOTBLOCK_DEVELOPMENT``` in ``
 Find ```georamos``` image in root folder. Its size must be 4194304 bytes.
 
 ## Usage
+5707755
+After poweroff, first, do bootstrap by ```SYS 57077```. ($DEF5)
 
-After poweroff, first, do bootstrap by ```SYS 57077```.
+Then, anytime, enter GeoRAMOS menu by ```SYS 53240``` ($cff8) ASPIRE FOR SYS 53000!!!!. If this does not work, bootstrap again by ```SYS 49397``` supposed $Cxxx is still there.
 
-Then, anytime, enter GeoRAMOS menu by ```SYS 49400```.
+If all fails do:
+```
+POKE 49397,0
+POKE 49398,0
+SYS 57077
+```
 
 ## Key bindings
 1    Help
@@ -52,15 +65,16 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- list dir
+- upload 1 usefull tool
+- backend for disk
+- backend for wic64
 - key shortcuts pro spousteni menu ***
-- menu pro zadavani mem addr pro download
 - cd
 - design UI toolkit
 - tool sd2iec launcher
 - install fastloader
 - load cartridge file
-- translocate
+- translocate  https://github.com/jblang/supermon64/blob/master/README.md
 - visual memory map 40*25=1000
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832

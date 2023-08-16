@@ -107,9 +107,9 @@ panel_footer_left_render:
     lda #default_screen_memory_hi + $03  // start of 23line
     sta panel_header_meta + 5   // targetCharPtr
 
-    lda #<default_color_memory_lo + $70
+    lda #default_color_memory_lo + $70
     sta panel_header_meta + 8   // targetColorPtr
-    lda #>default_color_memory_hi + $03
+    lda #default_color_memory_hi + $03
     sta panel_header_meta + 9   // targetColorPtr
 
     lda #<panel_header_meta
@@ -125,9 +125,9 @@ panel_footer_right_render:
     lda #default_screen_memory_hi + $03  // start of 23line
     sta panel_header_meta + 5   // targetCharPtr
 
-    lda #<default_color_memory_lo + $70 + 20
+    lda #default_color_memory_lo + $70 + 20
     sta panel_header_meta + 8   // targetColorPtr
-    lda #>default_color_memory_hi + $03
+    lda #default_color_memory_hi + $03
     sta panel_header_meta + 9   // targetColorPtr
 
     lda #<panel_header_meta

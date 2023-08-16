@@ -3,10 +3,10 @@
 // Only definitions here, no code that occupies memory
 
 // Memory
-.const page00 = $c000
+.const page00 = $cf00
 .const page00_lo = $00
-.const page00_hi = $c0
-.const page00_end = $c0ff
+.const page00_hi = $cf
+.const page00_end = $cfff
 .const page01 = $a000
 .const page01_hi = $a0
 .const default_screen_memory = $0400
