@@ -563,6 +563,7 @@ pcr_inc_line:
 pcr_current_line: .byte $00
 pcr_spacefill: .fill 16, $20
 
+
 //return: y: pointer to entry in dir/file table in $de00
 get_next_backend_entry:
     ldy gnbe_current_entry
