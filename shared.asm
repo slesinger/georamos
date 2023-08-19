@@ -22,7 +22,6 @@
 .var georam_block = $dfff  // 0-255, always store to geomem_block, because it is not possible read from this address
 
 // Kernal
-.const PRINT_NSTR = $ab1e
 .const SCNKEY = $FF9F
 .const GETIN = $ffe4
 .const CHROUT = $ffd2

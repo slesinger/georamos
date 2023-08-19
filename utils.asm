@@ -69,10 +69,28 @@ petscii2int:
     rts
 !:  pla
     sec
-    sbc #$36  // shift $41-$46 > $0a-$f
+    sbc #$37  // shift $41-$46 > $0a-$f
     rts
 
 
+/* Print NULL terminated string to screen cursor position
+A: lo nibble of string pointer
+Y: hi nibble of string pointer
+return: -
+*/
+PRINT_NSTR:
+    sta $fb
+    sty $fc
+    ldy #$00
+PRINT_NSTR_LOOP:
+    lda ($fb),y
+    cmp #$00  // NULL terminated string
+    beq PRINT_NSTR_END
+    jsr CHROUT  // print accumulator to cursor position
+    iny
+    bne PRINT_NSTR_LOOP
+PRINT_NSTR_END:
+    rts
 
 // Copy data from source memory pointer to georam
 // geo_copy_to_srcPtr + 1: source address

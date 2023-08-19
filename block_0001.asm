@@ -159,7 +159,6 @@ upload_from_memory_impl:
     jmp ufmi_end
 !:  cmp #$01                    // return pressed - upload
     bne ufmi_end
-    
     /// TODO validate from, to, file, type
     // get $FROM address
     lda #state_upld_from        // convert "from" address to word
@@ -418,7 +417,8 @@ firmware_upload:
     // fill whole georam with $00
 	lda #<fu_memclean
 	ldy #>fu_memclean
-	// jsr PRINT_NSTR  turned off due to calling basic when switched off
+	jsr PRINT_NSTR  // .const PRINT_NSTR = $ab1e
+
     lda #$00
     ldx #$00
     jsr georam_set  // start at sector 0, block 0
@@ -462,16 +462,16 @@ fu_all_clear:
     jsr geo_copy_to_geo
 	lda #<fw_upload_ok
 	ldy #>fw_upload_ok
-	// jsr PRINT_NSTR  vypnuto cause calling basic when switched off
+	jsr PRINT_NSTR
+!:  jmp !-  // why it does not exit to basic with rts?
     rts
-	rts
 fu_memclean:
     .text "CLEANING GEORAM MEMORY "
-    .byte $0d, $22, $00
+    .byte $0d, $00
 fw_upload_ok:
     .byte $0d
     .text "FIRMWARE UPLOADED SUCCESSFULLY"
-    .byte $22, $00
+    .byte $00
 
 
 // State of the program

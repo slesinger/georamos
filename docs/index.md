@@ -1,11 +1,5 @@
 # GeoRAMOS
 
-
-upload da do FAT 17 zaznamu, mam byt jen 16
-  posledni sector ma byt 0 ale je tam 1
-  posledni block ma byt ff ale je tam 10
-
-
 The OS booting from GeoRAM
 
 ## Features
@@ -21,7 +15,6 @@ Before building georamos image, make sure that ```BOOTBLOCK_DEVELOPMENT``` in ``
 Find ```georamos``` image in root folder. Its size must be 4194304 bytes.
 
 ## Usage
-5707755
 After poweroff, first, do bootstrap by ```SYS 57077```. ($DEF5)
 
 Then, anytime, enter GeoRAMOS menu by ```SYS 53240``` ($cff8) ASPIRE FOR SYS 53000!!!!. If this does not work, bootstrap again by ```SYS 49397``` supposed $Cxxx is still there.
@@ -66,6 +59,7 @@ the ` key should give you a left-arrow.
 
 # TODO
 - upload 1 usefull tool
+- bd00-bfff are free because sector 0 block 0-27 does not cover more. Move backend data area there and make sure initializes on bootstrap
 - backend for disk
 - backend for wic64
 - key shortcuts pro spousteni menu ***

@@ -196,28 +196,40 @@ $fb/$fc - sector/block pointer where to write out data
 write_file_srcPtr +1, +2: ptr to data to write
 */
 write_file:
-    lda #$00
+    lda #$01  // start counting from 1 instead 0, because last block has different handling
     sta write_file_current_block
 wf_block:
     jsr georam_set_fbfc  // switch sector/block to write out data, infered by create_file or find_free_fat_entry
     ldx #$00
 write_file_srcPtr:
-    lda $ffff,x  // $1000 is fake address, it will be replaced by real address
+    lda $ffff,x  // fake address, it will be replaced by real address
     sta pagemem,x
     inx
     bne write_file_srcPtr  // copy one full page
-
+    inc write_file_srcPtr +2  // increase memory page to read from
+    jsr save_next_to_pointer_table  // save next block pointer to FAT pointer table, return $fb/$fc as new free sector/block
     inc write_file_current_block
     lda write_file_current_block
     cmp write_file_count_blocks
     beq wf_last_block  // write next block
-    inc write_file_srcPtr +2  // increase memory page to read from
-    jsr save_next_to_pointer_table  // save next block pointer to FAT pointer table, 
-                                    // return $fb/$fc as new free sector/block
     jmp wf_block
 wf_last_block:
+    jsr georam_set_fbfc
+    lda write_file_srcPtr +1
+    sta write_file_srcPtr2 +1
+    lda write_file_srcPtr +2
+    sta write_file_srcPtr2 +2
     lda geo_copy_to_geo_last_block_bytes
+    sta write_file_srcPtr3 +1
     sta $fc
+    ldx #$ff
+!:  inx
+write_file_srcPtr2:
+    lda $ffff,x  // fake address, it will be replaced by real address
+    sta pagemem,x
+write_file_srcPtr3:
+    cpx #$ff
+    bne !-  // copy one full page
     jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
     rts
 write_file_current_block: .byte $ff
@@ -262,7 +274,8 @@ ffffie_found:
     rts
 
 
-/* Find first free FAT entry
+/* Find first free FAT entry based on "FAT block pointer table" where there is $00 and also in "FAT sector pointer table"
+It is not allowed to have a page where only $00 positioned byte (included) is saved.
 return: $fb/$fc - sector/block to free FAT record, it will destroy $de00 georam position
   $fb/$fc will be set to $ffff if disk is full
 */
@@ -275,12 +288,20 @@ find_free_fat_entry:
 !:  ldx #$00
 !:  lda $de00, x
     cmp #$00  // check if FAT record is free
-    beq ffffe_found
+    beq fffe_found
     inx
     cpx #$00
     bne !-
     jsr georam_next
-    lda #255  // first block after FAT block table
+    lda #0
+    cmp geomem_block   // block 0 is reserved in FAT block pointer table to indicate free block
+    bne fffe_non_block0
+    jsr georam_next
+fffe_non_block0:
+    lda #63  // last sector possible to allocate
+    cmp geomem_sector
+    bne !--
+    lda #255  // last block possible within sector 63
     cmp geomem_block
     bne !--
     // disk full
@@ -288,7 +309,7 @@ find_free_fat_entry:
     sta $fb
     sta $fc
     rts
-ffffe_found:
+fffe_found:
     lda geomem_block
     sec
     sbc #191
@@ -372,7 +393,7 @@ save_eof_to_pointer_table:
     tax  // block
     lda #$00  // sector
     jsr georam_set
-    lda $fb  // next free sector pointer
+    lda #$00  // sector 0 indicates this is last block
     ldx sntpt_olddata_block  // position within block of FAT sector pointer table indicates current block
     sta $de00, x       // store there the next sector pointer
 
