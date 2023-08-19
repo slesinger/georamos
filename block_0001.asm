@@ -27,6 +27,8 @@ read_key:
     beq menu_drop
     cmp #$30            // 0
     beq exit_to_basic
+    cmp #$52            // R  (with C=)  TODO C= isn ot recognized
+    beq reload_panel
     cmp #$91            // up arrow
     beq arrow_up_handler
     cmp #$11            // down arrow
@@ -79,6 +81,10 @@ menu_drop:
 exit_to_basic:
     jmp exit_to_basic_impl
 
+reload_panel:
+    jsr reload_panel_impl
+    jmp read_key
+
 arrow_up_handler:
     jsr arrow_up_handler_impl
     jmp read_key
@@ -111,6 +117,16 @@ next_input_handler:
     jsr activate_left_panel_func
     jmp read_key
 
+reload_panel_impl:
+    // lda $028d  // TODO this does not work together with GETIN
+    // and #%00000010  // Bit #1: 1 = Commodore is currently being pressed.
+    // cmp #%00000010
+    // cmp #$00
+    // bne rpi_end
+    jsr panel_left_backend_meta_vector
+    jsr panel_backend_fetch
+rpi_end:
+    rts
 
 arrow_up_handler_impl:
     lda current_state

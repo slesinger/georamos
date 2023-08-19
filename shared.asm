@@ -37,3 +37,12 @@ state: .enum {
     state_cdir_name
 }
 
+// sector numbers
+backend_type: .enum {
+    backend_type_georam = 0,  // dir/file table sector for georam
+    backend_type_floppy8 = 63 + 0,  // sector 63 for non georam temp dir/file table, 64 for floppy drive 8
+    backend_type_floppy9 = 63 + 64,  // sector 63 for non georam temp dir/file table, 64 for floppy drive 9
+    backend_type_network = 63 + 128  // sector 63 for non georam temp dir/file table, 128 for network drive
+}
+
+

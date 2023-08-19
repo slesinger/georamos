@@ -39,6 +39,10 @@ SYS 57077
 Cursor up and down: Move cursor
 SHIFT+RETURN: Skip to next panel or input
 Aarrow left: escape from input
+C=+g switch panel to georam
+C=+8/9 switch panel to disk drive 8/9
+C=+n switch panel to network drive
+C=+r refresh directory from source (reload from network or drive)
 
 
 

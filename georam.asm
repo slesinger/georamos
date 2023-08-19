@@ -25,5 +25,9 @@
 
 
 *=$be00 "georam_backend_data"
-panel_left_backend_data: .fill 2*128, $00   // 128 entries of 1B block, 1B pointer to entry in dir/file table
+/*
+Panel can display 128 entries at max. This are 128 pointer to actual entries. Pointer depends on content type used.
+128 entries of 1B block, 1B pointer to entry in dir/file table
+*/
+panel_left_backend_data: .fill 2*128, $00   
 panel_right_backend_data: .fill 2*128, $00

@@ -404,10 +404,44 @@ activate_panel_horizontal_border_len:
     rts
 
 
+/* Fetch data from floppy or network and populate sector 63 dir/file table. 
+This is called by C++r or when panel content type is changed
+$fb/$fc: panel_backend_meta pointer
+return: -
+*/
+panel_backend_fetch:
+    ldy #$06  // backend type
+    lda ($fb), y  // backend type defines sector
+    and #%00111111  // get just sector part of it
+    ldx #28  // start of dir table
+    jsr georam_set
+    lda ($fb), y  // backend type defines sector
+    and #%11000000  // get just backend type from it
+    cmp #128  // network
+    bne !+
+    jsr panel_backend_fetch_network
+    rts
+!:  jsr panel_backend_fetch_drive  // both 8 and 9
+    rts
 
+panel_backend_fetch_network:
+.break
+    lda #$40
+    sta $de00
+    lda #$00
+    sta $de01
+    lda #$4e
+    sta $de02
+    sta $de03
+    sta $de04
+    rts
+
+panel_backend_fetch_drive:
+    // TODO to be implemented
+    rts
 
 /*
-panel_backend
+Update backend data pointers (128 entries) to point to dir/file table entries within current view (directory)
   - refresh (backend)
 
 backend structure filedir entry
@@ -416,7 +450,6 @@ backend structure filedir entry
    bit 7: is_selected flag
   byte 1: pointer to specific entry in the dir/file table
 $fb/$fc: panel_backend_meta pointer
-
 return: -
 */
 panel_backend_refresh:
@@ -441,7 +474,9 @@ panel_backend_refresh:
     ldx #28                     
     stx pbr_current_block
     //   set georam
-    lda #$00  // sector 0
+    iny  // backend type
+    lda ($fb), y  // backend type defines sector
+    and #%00111111  // get just sector part of it
     jsr georam_set
     //   loop over entries
     ldx #$00  // index within panel_backend_data
@@ -510,14 +545,14 @@ panel_content_render:
     sta pcr_current_line  // loop over lines 0-19
 pcr_next_line:
     jsr get_next_backend_entry
-    lda ($f9), y  // file flags
+    lda $de00, y  // file flags
     sta pcr_type +1
     iny
     iny
     // render entry
     ldx #$00
 pcr_namecopy_loop:
-    lda ($f9), y  // dir/file table name
+    lda $de00, y  // dir/file table name
     jsr petscii2screen0
 pcr_s2:
     sta $ffff, x  // screen memory
@@ -561,21 +596,18 @@ Backend type agnostic get next entry routine
   $fb/$fc  backend meta data pointer
 return: 
   y: pointer to entry in dir/file table in $f9/$fa (e.g. $de00)
-  $f9/$fa: memory having entry data
 */
 get_next_backend_entry:
-    lda #$00
-    sta $f9
-    lda #$de    // TO DOOOOOOOOOOOOOO
-    sta $fa
-
     ldy #$04  // pointer from meta to data
     lda ($fb), y
     sta $f7
     iny
     lda ($fb), y
     sta $f8
-
+    iny
+    lda ($fb), y  // backend type
+    and #%00111111  // get just sector part of it
+    sta gnbe_sector +1
     ldy gnbe_current_entry
     iny
     iny
@@ -584,14 +616,15 @@ get_next_backend_entry:
     cmp #$00  // end of dir/file table?
     beq gnbe_end_of_dirfile_table
     tax
-    lda #$00  // sector 0
+gnbe_sector:
+    lda #$00  // sector 0 for georam. 63 for others
     jsr georam_set
     iny
     lda ($f7), y  // pointer to entry in dir/file table
     tay
     rts
 gnbe_end_of_dirfile_table:
-    lda #$00
+    lda #$00  // sector 0 - universal empty space
     ldx #$ff  // unused block filled with zeroes
     jsr georam_set
     ldy #231  // last entry at 21 bytes per entry = 231
@@ -714,7 +747,8 @@ panel_left_backend_meta:
     panel_left_cursor_position: .byte $00  // +1
     panel_left_scroll_position: .byte $00  // +2
     panel_left_first_screen_line: .byte $51  // +3
-    panel_left_backend_ptr: .word panel_left_backend_data  // +4
+    panel_left_backend_ptr: .word panel_left_backend_data  // +4  // 128 pointers to actual entries
+    panel_left_backend_type: .byte backend_type_network  // +6 see shared.asm
 
 panel_right_backend_meta:
     panel_right_current_dir: .byte $00  // root dir "/" id is $00
@@ -722,4 +756,5 @@ panel_right_backend_meta:
     panel_right_scroll_position: .byte $00
     panel_right_first_screen_line: .byte $65
     panel_right_backend_ptr: .word panel_right_backend_data
+    panel_right_backend_type: .byte backend_type_georam
 
