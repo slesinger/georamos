@@ -139,20 +139,12 @@ panel_footer_right_render:
 
 panel_content_left_render:
     jsr panel_left_backend_meta_vector
-    lda #<panel_left_backend_data
-    sta $f7
-    lda #>panel_left_backend_data
-    sta $f8
     jsr panel_backend_refresh
     jsr panel_content_render
     rts
 
 panel_content_right_render:
     jsr panel_right_backend_meta_vector
-    lda #<panel_right_backend_data
-    sta $f7
-    lda #>panel_right_backend_data
-    sta $f8
     jsr panel_backend_refresh
     jsr panel_content_render
     rts
@@ -424,7 +416,6 @@ backend structure filedir entry
    bit 7: is_selected flag
   byte 1: pointer to specific entry in the dir/file table
 $fb/$fc: panel_backend_meta pointer
-$f7/$f8: panel_backend_data pointer
 
 return: -
 */
@@ -433,14 +424,16 @@ panel_backend_refresh:
     cld
     lda $fb  // lo nibble metadata pointer
     sta pbr_curr_dir +1
-    lda $f7  // lo nibble data pointer
+    ldy #$04  // pointer from meta to data
+    lda ($fb), y
     sta pbr_s1 +1
     sta pbr_s2 +1
     sta pbr_s3 +1
 
     lda $fc  // hi nibble metadata pointer
     sta pbr_curr_dir +2
-    lda $f8  // hi nibble data pointer
+    iny
+    lda ($fb), y  // hi nibble data pointer
     sta pbr_s1 +2
     sta pbr_s2 +2
     sta pbr_s3 +2
@@ -498,7 +491,6 @@ pbr_current_block: .byte $00
 
 /* Use panel_backend_meta as dataprovider backend and render panel's main content
 $fb/$fc: panel_backend_meta pointer
-$f7/$f8: panel_backend_data pointer
 */
 panel_content_render:
     cld
@@ -518,14 +510,14 @@ panel_content_render:
     sta pcr_current_line  // loop over lines 0-19
 pcr_next_line:
     jsr get_next_backend_entry
-    lda $de00, y  // file flags
+    lda ($f9), y  // file flags
     sta pcr_type +1
     iny
     iny
     // render entry
     ldx #$00
 pcr_namecopy_loop:
-    lda $de00, y  // dir/file table name
+    lda ($f9), y  // dir/file table name
     jsr petscii2screen0
 pcr_s2:
     sta $ffff, x  // screen memory
@@ -564,8 +556,26 @@ pcr_current_line: .byte $00
 pcr_spacefill: .fill 16, $20
 
 
-//return: y: pointer to entry in dir/file table in $de00
+/*
+Backend type agnostic get next entry routine
+  $fb/$fc  backend meta data pointer
+return: 
+  y: pointer to entry in dir/file table in $f9/$fa (e.g. $de00)
+  $f9/$fa: memory having entry data
+*/
 get_next_backend_entry:
+    lda #$00
+    sta $f9
+    lda #$de    // TO DOOOOOOOOOOOOOO
+    sta $fa
+
+    ldy #$04  // pointer from meta to data
+    lda ($fb), y
+    sta $f7
+    iny
+    lda ($fb), y
+    sta $f8
+
     ldy gnbe_current_entry
     iny
     iny
