@@ -94,6 +94,6 @@ Position of FAT record in "FAT sector pointer table" and "FAT block pointer tabl
 
 #### FAT block pointer table
 - 1B block of next block  or in case last record of the file number of bytes belonging from the block - organized as "FAT block pointer table"
-If FAT block table record contains 0, corresponding data space is not allocated. If there is 0 and in corresponding FAT sector pointer table there is also 0, it means this is a last block of a file where only byte 0 of last memory page is stored. This for example for uploading memory $1000-$1200. It does not make too much practical sense but one can do it.
+Every 0-th block is skipped by find_free_fat_entry routine because if FAT block table record contains 0, corresponding data space is not allocated. If there is 0 and in corresponding FAT sector pointer table there is also 0, it means this is a last block of a file where only byte 0 of last memory page is stored. This for example for uploading memory $1000-$1200. It does not make too much practical sense but one can do it.
 
 

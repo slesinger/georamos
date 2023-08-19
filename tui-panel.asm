@@ -641,13 +641,15 @@ get_filetable_entry_of_file_under_cursor:
     tax  // save cursor position
     // TODO calculate cursor position within data backend (which is scrollable), now I assume curpos in panel == selected file in backend
     // hange $fb/$fc vector to point to backend data
-    lda $fb  // lo nibble metadata pointer
-    clc
-    adc #$04 // derive pointer to backend data
-    sta $fb
-    bcc !+  // no carry, no overflow, no need to increase hi nibble
-    inc $fc // increment hi nibble also
-!:  // point to backend data
+    ldy #$04  // ptr to backend data
+    lda ($fb),y
+    pha  // save backend data lo nibble
+    iny
+    lda ($fb),y
+    sta $fc  // hi nibble ptr to backend data
+    pla
+    sta $fb  // lo nibble ptr to backend data
+!:  // pointing to backend data
     txa
     asl  // backend data is 2 bytes per entry
     tay
@@ -696,16 +698,18 @@ panel_right_backend_meta_vector:
     sta $fc
     rts
 
+// for panel backend data see, georam.asm
 panel_left_backend_meta:
     panel_left_current_dir: .byte $00  // root dir "/" id is $00
-    panel_left_cursor_position: .byte $00
-    panel_left_scroll_position: .byte $00
-    panel_left_first_screen_line: .byte $51
-panel_left_backend_data: .fill 2*128, $00   // 128 entries of 1B block, 1B pointer to entry in dir/file table
+    panel_left_cursor_position: .byte $00  // +1
+    panel_left_scroll_position: .byte $00  // +2
+    panel_left_first_screen_line: .byte $51  // +3
+    panel_left_backend_ptr: .word panel_left_backend_data  // +4
 
 panel_right_backend_meta:
     panel_right_current_dir: .byte $00  // root dir "/" id is $00
     panel_right_cursor_position: .byte $00
     panel_right_scroll_position: .byte $00
     panel_right_first_screen_line: .byte $65
-panel_right_backend_data: .fill 2*128, $00
+    panel_right_backend_ptr: .word panel_right_backend_data
+

@@ -58,7 +58,6 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- upload 1 usefull tool
 - bd00-bfff are free because sector 0 block 0-27 does not cover more. Move backend data area there and make sure initializes on bootstrap
 - backend for disk
 - backend for wic64

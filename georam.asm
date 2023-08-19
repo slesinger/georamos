@@ -22,3 +22,8 @@
 #import "tui-panel.asm"
 #import "fs.asm"
 #import "utils.asm"
+
+
+*=$be00 "georam_backend_data"
+panel_left_backend_data: .fill 2*128, $00   // 128 entries of 1B block, 1B pointer to entry in dir/file table
+panel_right_backend_data: .fill 2*128, $00

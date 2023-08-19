@@ -324,44 +324,6 @@ cfmi_end:
     // jsr input_line_empty_render  // input line disappears to acknowledge done
     rts
 
-/*
-function converts memory address reprented as string to word.
-$fb, $fc: vector of pointing to string
-return: $f7 lo nibble, $f8 hi nibble
-*/
-memaddrstr_to_word:
-    cld
-    ldy #$00  // $X...
-    lda ($fb), y
-    jsr petscii2int
-    asl
-    asl
-    asl
-    asl
-    sta $f8
-    iny
-    lda ($fb), y
-    jsr petscii2int
-    clc
-    adc $f8
-    sta $f8
-
-    iny
-    lda ($fb), y
-    jsr petscii2int
-    asl
-    asl
-    asl
-    asl
-    sta $f7
-    iny
-    lda ($fb), y
-    jsr petscii2int
-    clc
-    adc $f7
-    sta $f7
-    rts
-
 
 // Main GeoRAMOS initialization
 // X: <preserved>
