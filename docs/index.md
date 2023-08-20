@@ -65,9 +65,11 @@ the ` key should give you a left-arrow.
 - bd00-bfff are free because sector 0 block 0-27 does not cover more. Move backend data area there and make sure initializes on bootstrap
 - backend for disk
 - backend for wic64
-- key shortcuts pro spousteni menu ***
+- key shortcuts pro spousteni menu ***, ****
 - cd
 - design UI toolkit
+- replace network.asm jsr CHROUT for correct output to status line
+- set default server config in options
 - tool sd2iec launcher
 - install fastloader
 - load cartridge file
@@ -80,7 +82,7 @@ the ` key should give you a left-arrow.
 
 *** keyabord CIA 1 $DC00
 $DC0D irq
-CIA1 IRG pin je napojeny na CPU IRG pin
+CIA1 IRG pin je napojeny na CPU IRQ pin
 $FFFE–$FFFF is the vector for handling both IRQ and BRK-instructions; it points to 65352/$FF48, nakonec 	JMP ($0314), By default the IRQ vector points to 59953/$EA31
 
 Init       SEI                  ; set interrupt bit, make the CPU ignore irq requests
@@ -101,14 +103,5 @@ Init       SEI                  ; set interrupt bit, make the CPU ignore irq req
            CLI                  ; clear irq flag, allowing CPU to respond to interrupt requests
            RTS
 
-
-/*
-    lda #$00
-    sta geo_copy_to_srcPtr + 1
-    lda #$a0
-    sta geo_copy_to_srcPtr + 2
-    ldx #$01 //geo sector
-    lda #$00 //geo block
-    ldy #$04 //copy n pages
-    jsr geo_copy_to
-*/
+**** patch kernal
+Disable kernal at E000 and copy its content into E000 ram. Patch it like wic64 does. You can load the kernal from net.

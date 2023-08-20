@@ -419,21 +419,9 @@ panel_backend_fetch:
     and #%11000000  // get just backend type from it
     cmp #128  // network
     bne !+
-    jsr panel_backend_fetch_network
+    jsr network_fetch_dirfile
     rts
 !:  jsr panel_backend_fetch_drive  // both 8 and 9
-    rts
-
-panel_backend_fetch_network:
-.break
-    lda #$40
-    sta $de00
-    lda #$00
-    sta $de01
-    lda #$4e
-    sta $de02
-    sta $de03
-    sta $de04
     rts
 
 panel_backend_fetch_drive:

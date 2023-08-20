@@ -4,6 +4,7 @@
 
 *=page01 "menu"
     jsr menu_screen_init  // all registers destroyed
+    jsr network_init
 
 // TODO to scan CONTROL, see https://skoolkid.github.io/sk6502/c64rom/asm/EA87.html
 read_key:

@@ -73,6 +73,28 @@ petscii2int:
     rts
 
 
+/* This routine is from WiC64
+*/
+charconvert:
+    cmp #$20
+    bne con0
+    lda #$2e
+con0:    
+    cmp #$c0    
+    bcs con2
+    cmp #$40    
+    bcs con1
+    rts
+con1:
+    clc
+    adc #$20
+    rts
+con2:
+    sec
+    sbc #$80
+    rts
+
+
 /* Print NULL terminated string to screen cursor position
 A: lo nibble of string pointer
 Y: hi nibble of string pointer

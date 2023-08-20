@@ -115,11 +115,15 @@ firmware_upload_init:
     jsr firmware_upload
     rts
 
-.text "END0!"
-
+// Global variables
 memaddr_ptr: .word $0000
 sector_ptr: .word $0000
 block_ptr: .word $0000
+default_server: // fill with spaces until here <
+.text "192.168.1.2:8899                        "
+
+.text "END0!"
+
 
 *=$cff5 "Bootstrap vector 49397" // helper to bootstrap with SYS 57077  (SYS 49397)
 

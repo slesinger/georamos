@@ -21,6 +21,8 @@
 #import "tui-input.asm"
 #import "tui-panel.asm"
 #import "fs.asm"
+#import "network.asm"
+
 #import "utils.asm"
 
 
