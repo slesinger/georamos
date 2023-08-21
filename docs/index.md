@@ -14,6 +14,11 @@ Before building georamos image, make sure that ```BOOTBLOCK_DEVELOPMENT``` in ``
 
 Find ```georamos``` image in root folder. Its size must be 4194304 bytes.
 
+Emulation of WiC64 is not available in stock VICE 3.6. Compile VICE 3.7 but before enable USERPORT_EXPERIMENTAL_DEVICES in userport/userport.h.
+``````
+./configure --enable-gtk3ui --disable-pdf-docs
+```
+
 ## Usage
 After poweroff, first, do bootstrap by ```SYS 57077```. ($DEF5)
 
@@ -24,6 +29,11 @@ If all fails do:
 POKE 49397,0
 POKE 49398,0
 SYS 57077
+```
+
+Start emulation by
+``````
+/usr/local/bin/x64sc -userportdevice 22 -autostartprgmode 1 -autostart /home/honza/projects/c64/projects/georam/georam.prg -moncommands /home/honza/projects/c64/projects/georam/georam.vs
 ```
 
 ## Key bindings
@@ -65,6 +75,7 @@ the ` key should give you a left-arrow.
 - bd00-bfff are free because sector 0 block 0-27 does not cover more. Move backend data area there and make sure initializes on bootstrap
 - backend for disk
 - backend for wic64
+- identify and setup IP address, e.g. 192.168.1.208
 - key shortcuts pro spousteni menu ***, ****
 - cd
 - design UI toolkit

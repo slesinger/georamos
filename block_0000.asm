@@ -24,9 +24,6 @@ copy_bootstrap:
     bne !-
     jmp bootstrap_code
 
-geomem_sector: .byte $00  // 0-63
-geomem_block: .byte $00  // 0-255
-// .watch geomem_block
 
 /* set header position in georam
 no inputs
@@ -116,9 +113,10 @@ firmware_upload_init:
     rts
 
 // Global variables
-memaddr_ptr: .word $0000
-sector_ptr: .word $0000
-block_ptr: .word $0000
+geomem_sector: .byte $00  // 0-63
+geomem_block: .byte $00  // 0-255
+sector_ptr: .word $00   //used by fs
+block_ptr: .word $00   //used by fs
 default_server: // fill with spaces until here <
 .text "192.168.1.2:8899                        "
 

@@ -419,7 +419,7 @@ panel_backend_fetch:
     and #%11000000  // get just backend type from it
     cmp #128  // network
     bne !+
-    jsr network_fetch_dirfile
+    jsr network_dirfile
     rts
 !:  jsr panel_backend_fetch_drive  // both 8 and 9
     rts

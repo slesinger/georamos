@@ -2,7 +2,7 @@
 // or
 // #define UPLOAD_FIRMWARE  // upload firmware to georamos (can be invoked from menu)
 
-
+#define NETWORK
 
 #import "shared.asm"
 

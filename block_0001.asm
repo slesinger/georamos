@@ -4,7 +4,9 @@
 
 *=page01 "menu"
     jsr menu_screen_init  // all registers destroyed
-    jsr network_init
+    #if NETWORK
+        jsr network_init
+    #endif
 
 // TODO to scan CONTROL, see https://skoolkid.github.io/sk6502/c64rom/asm/EA87.html
 read_key:
@@ -59,7 +61,7 @@ dowload_to_memory:
     jmp read_key
 
 copy_file:
-    inc $d021
+    jsr network_get  // !!!!!!!!!!!!!!!!!!!!!!!!! This is temporary
     jmp read_key
 
 move_file:
@@ -159,7 +161,6 @@ arrow_down_handler_impl:
 // Upload memory to GEORAM as a file
 // filename_ptr 16 chars will be read
 // filesize_ptr
-// memaddr_ptr
 // X: <preserved>
 // Y: <preserved>
 // A: <preserved>

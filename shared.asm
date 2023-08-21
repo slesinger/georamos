@@ -2,6 +2,9 @@
 
 // Only definitions here, no code that occupies memory
 
+.const space = $20
+.const W = $57
+
 // Memory
 .const page00 = $cf00
 .const page00_lo = $00

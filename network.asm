@@ -19,51 +19,64 @@ network_init:
     rts
 // TODO make this configurable, see global variables
 command_default_server:
- .byte "W", 32, 0, $08
- .text "http://192.168.1.2/georamos/"
-
-
+.byte W, 27, 0, $08
+.byte $68, $74, $74, $70, $3A, $2F, $2F, $31, $39, $32, $2E, $31, $36, $38, $2E, $31, $2E, $32, $2F, $67, $65, $6F, $2F
+//    h    t    t    p    :    /    /    1    9    2    .    1    6    8    .    1    .    2    /    g    e    o    /   
+// .text "http://C64.DOMA/GEO/"
+ 
 /* Fetch dir/file table (5+95 blocks and populate it to sector 63)
 return -
 */
-network_fetch_dirfile:
-    lda #<command_fetch_dirfile
+network_dirfile:
+    lda #<command_dirfile
     sta $fe
-    lda #>command_fetch_dirfile
+    lda #>command_dirfile
     sta $ff
     jsr network_send_command
+    lda #$01  // write to georam sequentially
+    sta $b9 
+    lda #63  // sector
+    ldx #28  // start with dir table at block 5
+    jsr georam_set
     jsr network_getanswer
     rts
-command_fetch_dirfile:
- .byte "W", 32, 0, $01
- .text ":dirfile"
+command_dirfile:
+.byte W, 4+12, 0, $01
+.byte  $21, $64, $69, $72, $66, $69, $6C, $65, $2E, $70, $68, $70
+//     !    d    i    r    f    i    l    e    .    p    h    p
+ 
 
-
-/* not used yet
+/* Download file from server.
+Filename must be copied to command_get_filename (max 64 chars) and total length must be updated as length = 15 + filename length
+$b7: length of filename
+$bb/$bc: vector of filename  TOTO se zkopiruje na zacatku funkce takze to nahore je zbytecne
 */
-network_load_http:
-// httpcommand: !text "W",$00,$00,$01
-    lda #"W"
-    jsr write_byte
-    lda $b7
-    clc
-    adc #$04
-    jsr write_byte  // size lo nibble 4 + filename length
-    lda #$00
-    jsr write_byte  // size hi nibble
-    lda #$01
-    jsr write_byte  // load HTTP command
+network_get:
+    lda #<command_get
+    sta $fe
+    lda #>command_get
+    sta $ff
+                                        //  TODO copy filename here
+    lda #24  // temporary length
+    sta command_get_size
+    jsr network_send_command
+    lda #$02  // use target address from file
+    sta $b9
+    jsr network_getanswer
+//        K CEMU JE    jsr charconvert
 
-    ldy #00         // send filename
-send_filenameheader:
-    lda ($BB),y
-    jsr charconvert
-    jsr write_byte
-    iny
-    cpy $B7
-    bne send_filenameheader
     rts
-
+command_get:
+.byte W
+command_get_size:
+.byte 4+11, 0
+.byte $01  // load http
+.byte $21, $67, $65, $74, $2E, $70, $68, $70, $3F, $66, $3D
+//    !    g    e    t    .    p    h    p    ?    f    =
+command_get_filename:
+.byte $68, $64, $6e, $6d, $69, $72, $72, $6f, $72   /// THIS IS JUST TEMP, remove this
+//    h    d    n    m    i    r    r    o    r
+.fill 64, $20  // space for filename
 
 /*  Execute command without need to fetch response
 $fe/$ff command to send
@@ -98,11 +111,15 @@ stringexit:
 
 /* Read data from server after command has been issued. Target memory address comes from network (like PRG has it)
 Modified: $fc/$fd
-If $b9 == 00 then get target memory vector from $c3/$c4. This effectively overwrites original address recived from network
+If $b9 == 0 then get target memory vector from $c3/$c4 (like kernal).
+If $b9 == 1 target sequential write to georam. Make sure georam page is set correctly.
+If $b9 >= 2 then use address received as first two bytes of fileit to point to georam $de00
+TODO Use 02 to write to georam as a new file
+If $b9 > 02 then get target memory vector from network
 return: 
   $fa/$fb length of data
   $c1/$c2 start address where data were loaded
-  #c3/$c4 end address ?
+  #c3/$c4 end address
 */
 network_getanswer:
     lda #$00  // Datenrichtung Port B Eingang
@@ -127,7 +144,7 @@ loaderrorcheck:
     jsr CHROUT  // TODO output error to status line
     jsr read_byte
     jsr CHROUT
-    lda #" "
+    lda #space
     jsr CHROUT
     sec
     lda #$04
@@ -140,42 +157,35 @@ setloadadress:
     sta $fd
     lda $b9  // Sekundäradresse holen
     cmp #$00
-    bne nga_loadtoaddress
-    lda $c3  // Kernal übergibt Ladeadresse über $c3/c4
+    bne nga_loadtogeoram
+    lda $c3  // $b9 == 0 then take target address from $c3/c4 as kernal does it
     sta $c1
     sta $fc
     lda $c4
     sta $c2
     sta $fd
+    jsr startload_to_mem
+    jmp load_finished
+nga_loadtogeoram:
+    cmp #$01
+    bne nga_loadtoaddress
+    lda #$00  // $b9 == 1 then set address to georam sequential, used in dirfile, georam assumed to be set to correct block
+    sta $fc
+    lda #$de
+    sta $fd
+    jsr startload_to_geo_seq
+    jmp load_finished
 nga_loadtoaddress:
-    lda $fc
+    lda $fc  // $b9 >= 2 then take address from network
     sta $c3
-    sta $c1  // Load Adresse Start C1 bzw. Ende C3
+    sta $c1  // Load adress start C1 bzw. Ende C3
     lda $fd
     sta $c4
-    sta $c2 
-    
-startload:
-    ldx $fb             // low byte 
-xloop:    
-    ldy #$00
-goread:
-    jsr read_byte
-    sta ($fc),y
-    iny
-    bne ycont
-    inc $fd
-ycont:    
-    dex
-    bne goread
-    dec $fa
-    lda $fa
-    cmp #$ff
-    bne goread
-    sty $c3
-    lda $fd
-    sta $c4
+    sta $c2
+    jsr startload_to_mem
+    jmp load_finished
 
+load_finished:
 cleanup:      // ESP in Lesemodus schalten    
     lda #$ff  // Datenrichtung Port B Ausgang
     sta $dd03
@@ -184,6 +194,43 @@ cleanup:      // ESP in Lesemodus schalten
     sta $dd00
     lda #$00
     clc
+    rts
+
+startload_to_mem:
+    ldx $fb  // lo??
+    ldy #$00
+stm_goread:
+    jsr read_byte
+    sta ($fc),y  // lo current address
+    iny
+    bne stm_ycont
+    inc $fd  // hi current address
+stm_ycont:    
+    dex
+    bne stm_goread
+    dec $fa
+    lda $fa
+    cmp #$ff
+    bne stm_goread
+    sty $c3  // lo nibble end address
+    lda $fd
+    sta $c4  // hi niblle end address
+    rts
+
+startload_to_geo_seq:
+    ldy #$00
+stgs_goread:
+    jsr read_byte
+    sta ($fc),y  // lo current address
+    iny
+    bne stgs_ycont
+    jsr georam_next
+stgs_ycont:    
+    bne stgs_goread
+    dec $fa
+    lda $fa
+    cmp #$ff
+    bne stgs_goread
     rts
 
 

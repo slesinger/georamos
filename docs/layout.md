@@ -49,11 +49,11 @@ Sector 0    , blocks 192-254: FAT block pointer table (63 blocks)  [$300000]
 Sector 0    , block  255    : unused
 Sector 01-63                : data area
 
-TODO! use sector 63 for network and floppy dir/file table
+> Note: For temporary storing current directory dir/file table from network drive sector 63 is used
 
 ## Directory table / File table
 Total dir table size 100blocks*256bytes = 25600bytes
-Each block holds 12 entries (20bytes/entry * 12 = 240 < 256)
+Each block holds 12 entries (21bytes/entry * 12 = 252 < 256)
 Maximum directories: 60
 Maximum files in directory: 128
 
