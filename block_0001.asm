@@ -164,8 +164,21 @@ shiftreturn_handler_impl:  // download and execute file
     and #%11000000  // isolate flags
     cmp #%01000000  // check if is directory
     beq shi_end     // skip directory
+    pha
     jsr network_get
-    // TODO execute file
+    pla
+    cmp #%10000000  // check if is PRG
+    bne shi_end     // skip non-PRG
+    // execute file
+    lda $c1
+    cmp #$01
+    bne !+
+    lda $c2
+    cmp #$08
+    bne !+
+    jmp run_basic
+    rts  // there is no return to georamos from executed program
+!:  jmp run_prg
 shi_end:
     rts
 

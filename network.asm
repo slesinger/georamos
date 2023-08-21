@@ -51,6 +51,9 @@ Filename will be appended to command_get_filename (max 16+.+3 chars) and total l
 Georam must be set to dir/file to respective table block
 A: file type
 X: pointer to file table entry
+return:
+  $c1/$c2 start address where data were loaded
+  $c3/$c4 end address
 */
 network_get:
     pha
@@ -167,7 +170,7 @@ If $b9 > 02 then get target memory vector from network
 return: 
   $fa/$fb length of data
   $c1/$c2 start address where data were loaded
-  #c3/$c4 end address
+  $c3/$c4 end address
 */
 network_getanswer:
     lda #$00  // Datenrichtung Port B Eingang

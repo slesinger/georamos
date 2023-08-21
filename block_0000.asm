@@ -6,7 +6,7 @@
 *=page00 "copy_bootstrap" // good for entering GeoRAMOS menu by SYS 51200?
     jmp menu
 
-.text "MEDLIK"  // magic and more magic
+.text "MEDLI"  // magic and more magic
 
 copy_bootstrap:
 
@@ -16,8 +16,9 @@ copy_bootstrap:
     // copy bootstrap from $de00 to $cf00
     lda #$00
     ldx #$00
-    stx georam_sector
-    stx geomem_sector
+    jsr geo_copy_common_init
+    jmp $de12
+at_de12:
 !:  lda pagemem,x
     sta bootstrap,x
     inx
@@ -111,6 +112,33 @@ firmware_upload_init:
     sta $01
     jsr firmware_upload
     rts
+
+/* When a program is downloaded with start address $0801, basic rom needs to be enabled and basic program started.
+Basic program must be loaded already.
+*/
+run_basic:
+    sei
+    lda #$37
+    sta $01
+    cli
+    jsr $a659  // reset execute pointer and do CLR
+    jmp $a7ae  // interpreter inner loop
+.break
+    brk
+
+/* Run a ML program with start address at $c1/$c2, basic rom needs to be enabled and basic program started.
+ML program must be loaded already.
+$c1/$c2 is the start address of the ML program.
+*/
+run_prg:
+    sei
+    lda #$37
+    sta $01
+    cli
+    jsr $a659  // reset execute pointer and do CLR
+    jsr $e544  // clear screen
+    jmp ($00c1)  // run non-basic program
+
 
 // Global variables
 geomem_sector: .byte $00  // 0-63

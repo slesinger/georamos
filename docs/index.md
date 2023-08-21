@@ -15,14 +15,16 @@ Before building georamos image, make sure that ```BOOTBLOCK_DEVELOPMENT``` in ``
 Find ```georamos``` image in root folder. Its size must be 4194304 bytes.
 
 Emulation of WiC64 is not available in stock VICE 3.6. Compile VICE 3.7 but before enable USERPORT_EXPERIMENTAL_DEVICES in userport/userport.h.
-``````
+```
 ./configure --enable-gtk3ui --disable-pdf-docs
 ```
 
 ## Usage
-After poweroff, first, do bootstrap by ```SYS 57077```. ($DEF5)
+After poweroff, first, do bootstrap by ```SYS 57077```. ($def5)
 
-Then, anytime, enter GeoRAMOS menu by ```SYS 53240``` ($cff8) ASPIRE FOR SYS 53000!!!!. If this does not work, bootstrap again by ```SYS 49397``` supposed $Cxxx is still there.
+Then, anytime, enter GeoRAMOS menu by ```SYS 53240``` ($cff8). This jumps to already bootstrapped Georamos.
+
+You can also bootstrap again by```SYS 53000``` ($cf08) supposed $CFxx is still there.
 
 If all fails do:
 ```
@@ -30,6 +32,8 @@ POKE 49397,0
 POKE 49398,0
 SYS 57077
 ```
+
+If this does not work then georam image is broken.
 
 Start emulation by
 ``````
@@ -73,7 +77,6 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- enter to run prg
 - download prefill origin address
 - network upload
 - cd to directories
