@@ -35,6 +35,7 @@ SYS 57077
 
 If this does not work then georam image is broken.
 
+### Emulation
 Start emulation by
 ``````
 /usr/local/bin/x64sc -userportdevice 22 -autostartprgmode 1 -autostart /home/honza/projects/c64/projects/georam/georam.prg -moncommands /home/honza/projects/c64/projects/georam/georam.vs

@@ -15,9 +15,9 @@ copy_bootstrap:
 
     // copy bootstrap from $de00 to $cf00
     lda #$00
-    ldx #$00
-    jsr geo_copy_common_init
-    jmp $de12
+    sta georam_sector
+    sta georam_block
+    jmp $de13
 at_de12:
 !:  lda pagemem,x
     sta bootstrap,x
@@ -153,7 +153,7 @@ default_server: // fill with spaces until here <
 
 *=$cff5 "Bootstrap vector 49397" // helper to bootstrap with SYS 57077  (SYS 49397)
 
-    jmp $de09
+    jmp $de08
 
 menu_jumper:
 *=$cff8 "Menu vector 49400" // helper to jump to menu with SYS 49400
