@@ -1,5 +1,7 @@
 #importonce
 
+#import "shared.asm"
+
 /* Multiply mmba_a * mmba_b
 return: A: result
 */

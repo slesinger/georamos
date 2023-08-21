@@ -73,8 +73,7 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- net_get with right parameter
-- enter to run
+- enter to run prg
 - download prefill origin address
 - network upload
 - cd to directories
@@ -82,6 +81,8 @@ the ` key should give you a left-arrow.
 - backend for disk
 - disk directory
 - bookmarks to directories
+- panel header info (backend type, current dir)
+- panel footer inf (size, start address)
 - status bar to display status/errors, memory location file is downloaded, loaded from disk
 - copy network to georam
 - copy georam to network
@@ -95,6 +96,7 @@ the ` key should give you a left-arrow.
 - load cartridge file
 - translocate  https://github.com/jblang/supermon64/blob/master/README.md
 - visual memory map 40*25=1000
+- display free space in georam
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
 

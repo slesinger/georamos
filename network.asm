@@ -47,24 +47,74 @@ command_dirfile:
  
 
 /* Download file from server.
-Filename must be copied to command_get_filename (max 64 chars) and total length must be updated as length = 15 + filename length
-$b7: length of filename
-$bb/$bc: vector of filename  TOTO se zkopiruje na zacatku funkce takze to nahore je zbytecne
+Filename will be appended to command_get_filename (max 16+.+3 chars) and total length will be updated as length = 15 + filename length
+Georam must be set to dir/file to respective table block
+A: file type
+X: pointer to file table entry
 */
 network_get:
+    pha
+    // copy file name to command
+    inx  // x point to file name
+    inx
+    ldy #$00
+!:  lda pagemem,x
+    sta command_get_filename, y
+    inx
+    iny    
+    cpy #$10  // 16 chars filename
+    bne !-
+    // find of filename and append file type
+!:  dey
+    lda command_get_filename, y
+    cmp #$20
+    beq !-
+    iny  // first empty space
+    pla  // file type
+    cmp #%10000000  // PRG
+    bne ng_seq
+    lda #$2e  // .
+    sta command_get_filename, y
+    iny
+    lda #$70  // p
+    sta command_get_filename, y
+    // iny
+    lda #$72  // r
+    sta command_get_filename+1, y
+    // iny
+    lda #$67  // g
+    sta command_get_filename+2, y
+    // iny
+    jmp ng_next
+ng_seq:
+    cmp #%11000000  // SEQ
+    bne ng_end
+    lda #$2e  // .
+    sta command_get_filename, y
+    iny
+    lda #$73  // s
+    sta command_get_filename, y
+    iny
+    lda #$65  // e
+    sta command_get_filename+1, y
+    iny
+    lda #$71  // q
+    sta command_get_filename+2, y
+    iny
+ng_next:
+    tya
+    clc
+    adc #18  // length of command start
+    sta command_get_size
     lda #<command_get
     sta $fe
     lda #>command_get
     sta $ff
-                                        //  TODO copy filename here
-    lda #24  // temporary length
-    sta command_get_size
     jsr network_send_command
     lda #$02  // use target address from file
     sta $b9
     jsr network_getanswer
-//        K CEMU JE    jsr charconvert
-
+ng_end:
     rts
 command_get:
 .byte W
@@ -74,9 +124,7 @@ command_get_size:
 .byte $21, $67, $65, $74, $2E, $70, $68, $70, $3F, $66, $3D
 //    !    g    e    t    .    p    h    p    ?    f    =
 command_get_filename:
-.byte $68, $64, $6e, $6d, $69, $72, $72, $6f, $72   /// THIS IS JUST TEMP, remove this
-//    h    d    n    m    i    r    r    o    r
-.fill 64, $20  // space for filename
+.fill 20, $20  // space for filename
 
 /*  Execute command without need to fetch response
 $fe/$ff command to send

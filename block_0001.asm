@@ -37,14 +37,14 @@ read_key:
     cmp #$11            // down arrow
     beq arrow_down_handler
     cmp #$1d            // right arrow
-    beq arrow_right_handler
+    beq next_input_handler
     cmp #$9d            // left arrow
-    beq arrow_left_handler
+    beq next_input_handler
     cmp #$5f            // arrow left to escape  
     beq escape_handler
-    cmp #$8d            // shift + return as tab, next input
-    beq next_input_handler
-    cmp #$0d            // shift + return as tab, next input PRECHODNE
+    cmp #$8d            // shift + return
+    beq shiftreturn_handler
+    cmp #$0d            // return, TODO change directory
     beq next_input_handler
     jmp read_key
 
@@ -61,7 +61,7 @@ dowload_to_memory:
     jmp read_key
 
 copy_file:
-    jsr network_get  // !!!!!!!!!!!!!!!!!!!!!!!!! This is temporary
+    inc $d021
     jmp read_key
 
 move_file:
@@ -96,16 +96,12 @@ arrow_down_handler:
     jsr arrow_down_handler_impl
     jmp read_key
 
-arrow_right_handler:
-    inc $d021
-    jmp read_key
-
-arrow_left_handler:
-    inc $d021
-    jmp read_key
-
 escape_handler:
     inc $d021
+    jmp read_key
+
+shiftreturn_handler:  // download and execute file
+    jsr shiftreturn_handler_impl
     jmp read_key
 
 next_input_handler:
@@ -155,6 +151,22 @@ arrow_down_handler_impl:
     bne !+
     jsr panel_right_backend_meta_vector
     jsr panel_cursor_down
+    rts
+
+shiftreturn_handler_impl:  // download and execute file
+    lda current_state
+    jsr load_state_panel_vector  // > $fb/$fc panel metadata
+    jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
+    ldx $fb  // block
+    jsr georam_set  // change to point to file table
+    ldx $fc  // entry pointer
+    lda pagemem, x  // get file flags
+    and #%11000000  // isolate flags
+    cmp #%01000000  // check if is directory
+    beq shi_end     // skip directory
+    jsr network_get
+    // TODO execute file
+shi_end:
     rts
 
 
@@ -219,8 +231,7 @@ dowload_to_memory_impl:
     jsr input_line_dnld_render
     lda current_state
     jsr load_state_panel_vector  // > $fb/$fc panel metadata
-    jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, sector 0
-    lda #$00  // sector 0
+    jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
     ldx $fb  // block 0-255
     jsr georam_set  // change to point to file table
     lda $fc  // entry pointer

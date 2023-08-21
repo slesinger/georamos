@@ -1,8 +1,9 @@
 <?php
-$fn = "./netdisk/hdnmirror.prg";
+const BASE_DIR = './netdisk/';
+$fn = strtolower($_GET['f']);
 // Read binary file
-$filesize = filesize($fn);
-$fp = fopen($fn, 'rb');
+$filesize = filesize(BASE_DIR . $fn);
+$fp = fopen(BASE_DIR . $fn, 'rb');
 $binary = fread($fp, $filesize);
 fclose($fp);
 

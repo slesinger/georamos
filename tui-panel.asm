@@ -664,9 +664,14 @@ lspv_end:
 
 /* Get filetable entry of file under cursor of active panel
 input: $fb/$fc: vector of panel metadata
-return: $fb/$fc: vector pointing to filetable entry: sector=0, block=$fb, pointer to entry=$fc
+return:
+  $fb/$fc: vector pointing to filetable entry: sector=0, block=$fb, pointer to entry=$fc
+  A: sector of filetable entry (0 for georam, 63 for network....)
 */
 get_filetable_entry_of_file_under_cursor:
+    ldy #$06  // backend type
+    lda ($fb),y 
+    sta gfeofuc_backend_type
     ldy #$01  // cursor position info
     lda ($fb), y  // a = cursor position within panel
     tax  // save cursor position
@@ -690,8 +695,10 @@ get_filetable_entry_of_file_under_cursor:
     lda ($fb), y  // a=pointer to entry in dir/file table
     stx $fb
     sta $fc
+    lda gfeofuc_backend_type
+    and #%00111111  // get just sector part of it
     rts
-
+gfeofuc_backend_type: .byte $00
 
 panel_header_meta:
     .byte   20, 1  // width, height
