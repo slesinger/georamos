@@ -1,5 +1,5 @@
 <?php
-$fn = "./netdisk/hdnmirror";
+$fn = "./netdisk/hdnmirror.prg";
 // Read binary file
 $filesize = filesize($fn);
 $fp = fopen($fn, 'rb');

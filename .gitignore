@@ -5,3 +5,4 @@
 *.log
 *.prg
 georamos
+server/netdisk/**

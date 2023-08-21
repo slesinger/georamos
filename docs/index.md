@@ -40,14 +40,15 @@ Start emulation by
 1    Help
 2    Upload memory area to GeoRAM file
 3    Download GeoRAM file to memory
-5    Copy file
-6    Move file
+5    Copy file     ??? can i do it without temp mempry???  remove this?
+6    Move file     ??? can i do it without temp mempry???  remove this?
 7    Create a new directory
 8    Delete file or directoru under cursor
 9    Menu
 0    Exit to Basic
 Cursor up and down: Move cursor
-SHIFT+RETURN: Skip to next panel or input
+Left | Right: Change to next panel or input   !!!!!
+RETURN: cd into dir | start PRG
 Aarrow left: escape from input
 C=+g switch panel to georam
 C=+8/9 switch panel to disk drive 8/9
@@ -72,12 +73,20 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- bd00-bfff are free because sector 0 block 0-27 does not cover more. Move backend data area there and make sure initializes on bootstrap
+- net_get with right parameter
+- enter to run
+- download prefill origin address
+- network upload
+- cd to directories
+- scrollable panel
 - backend for disk
-- backend for wic64
-- identify and setup IP address, e.g. 192.168.1.208
+- disk directory
+- bookmarks to directories
+- status bar to display status/errors, memory location file is downloaded, loaded from disk
+- copy network to georam
+- copy georam to network
+- file view
 - key shortcuts pro spousteni menu ***, ****
-- cd
 - design UI toolkit
 - replace network.asm jsr CHROUT for correct output to status line
 - set default server config in options
@@ -88,7 +97,6 @@ the ` key should give you a left-arrow.
 - visual memory map 40*25=1000
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
-- .segmentdef block_fill [min=$0000, max=$3eff, fill] problem se zero page warningem, use .abs
 
 
 *** keyabord CIA 1 $DC00
