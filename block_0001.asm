@@ -114,6 +114,7 @@ next_input_handler:
 !:  cmp #state_right_panel
     bne !+
     jsr activate_left_panel_func
+    jsr network_get_time  // good time to update the time
     jmp read_key
 
 reload_panel_impl:

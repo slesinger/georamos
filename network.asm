@@ -16,6 +16,7 @@ network_init:
     lda #>command_default_server
     sta $ff
     jsr network_send_command
+    jsr network_get_time
     rts
 // TODO make this configurable, see global variables
 command_default_server:
@@ -24,6 +25,50 @@ command_default_server:
 //    h    t    t    p    :    /    /    1    9    2    .    1    6    8    .    1    .    2    /    g    e    o    /   
 // .text "http://C64.DOMA/GEO/"
  
+
+/* get time from wic64 command$15 and display in upper right corner
+return -
+*/
+network_get_time:
+    lda #<command_get_time
+    sta $fe
+    lda #>command_get_time
+    sta $ff
+    jsr network_send_command
+    jsr network_getanswer_init
+    bcc ngt_ok
+    // TODO print error status
+    rts
+ngt_ok:
+    lda #default_screen_memory_lo + 29
+    sta $fe
+    lda #default_screen_memory_hi
+    sta $ff
+    ldy #$00
+!:  jsr read_byte  // print HH:MM
+    ora #$c0
+    sta ($fe),y
+    iny
+    cpy #$05
+    bne !-
+    jsr read_byte  // skip :SS
+    jsr read_byte
+    jsr read_byte
+!:  jsr read_byte  // print HH:MM
+    ora #$c0
+    sta ($fe),y
+    iny
+    cpy #$0b
+    bne !-
+    ldy #$05
+!:  jsr read_byte  // read remaining bytes from network
+    dey
+    bne !-
+    rts
+command_get_time:
+.byte W, 4, 0, $15
+
+
 /* Fetch dir/file table (5+95 blocks and populate it to sector 63)
 return -
 */
