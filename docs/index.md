@@ -78,18 +78,26 @@ the ` key should give you a left-arrow.
 
 
 # TODO
+- Commodorrserver v-1541
+- Cbmcommand codeplex com
+- DLH commodore archive
+- swap fa and fb in network as length of data
 - download prefill origin address
+- Display ntp time in upper right corner
+- Detect wic64
 - network upload
 - cd to directories
 - scrollable panel
 - backend for disk
 - disk directory
 - bookmarks to directories
+- Copy and paste clipboard globaly
 - panel header info (backend type, current dir)
 - panel footer inf (size, start address)
 - status bar to display status/errors, memory location file is downloaded, loaded from disk
 - copy network to georam
 - copy georam to network
+- upgrade to latest wic64 firware and check if hack in get.php is still needed
 - file view
 - key shortcuts pro spousteni menu ***, ****
 - design UI toolkit

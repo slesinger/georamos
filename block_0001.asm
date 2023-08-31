@@ -153,7 +153,7 @@ arrow_down_handler_impl:
     jsr panel_cursor_down
     rts
 
-shiftreturn_handler_impl:  // download and execute file
+shiftreturn_handler_impl:  // download to memory and execute file
     lda current_state
     jsr load_state_panel_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector

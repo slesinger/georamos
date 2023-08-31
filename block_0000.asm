@@ -123,7 +123,6 @@ run_basic:
     cli
     jsr $a659  // reset execute pointer and do CLR
     jmp $a7ae  // interpreter inner loop
-.break
     brk
 
 /* Run a ML program with start address at $c1/$c2, basic rom needs to be enabled and basic program started.

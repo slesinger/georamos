@@ -6,12 +6,13 @@
 .const W = $57
 
 // Memory
+.const debug = $ce00
 .const page00 = $cf00
 .const page00_lo = $00
 .const page00_hi = $cf
 .const page00_end = $cfff
-.const page01 = $a000
-.const page01_hi = $a0
+.const page01 = $8000  // change this to relocate the menu
+.const page01_hi = $80 // change this to relocate the menu
 .const default_screen_memory = $0400
 .const default_screen_memory_lo = $00
 .const default_screen_memory_hi = $04

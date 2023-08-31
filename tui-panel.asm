@@ -410,12 +410,13 @@ $fb/$fc: panel_backend_meta pointer
 return: -
 */
 panel_backend_fetch:
-    ldy #$06  // backend type
+    ldy #$06  // backend type ptr
     lda ($fb), y  // backend type defines sector
+    pha
     and #%00111111  // get just sector part of it
     ldx #28  // start of dir table
     jsr georam_set
-    lda ($fb), y  // backend type defines sector
+    pla      // backend type defines sector
     and #%11000000  // get just backend type from it
     cmp #128  // network
     bne !+

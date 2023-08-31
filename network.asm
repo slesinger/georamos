@@ -39,6 +39,8 @@ network_dirfile:
     ldx #28  // start with dir table at block 5
     jsr georam_set
     jsr network_getanswer
+lda #14
+sta $d020  //complete
     rts
 command_dirfile:
 .byte W, 4+12, 0, $01
@@ -160,29 +162,26 @@ stringexit:
     rts
 
 
-/* Read data from server after command has been issued. Target memory address comes from network (like PRG has it)
-Modified: $fc/$fd
-If $b9 == 0 then get target memory vector from $c3/$c4 (like kernal).
-If $b9 == 1 target sequential write to georam. Make sure georam page is set correctly.
-If $b9 >= 2 then use address received as first two bytes of fileit to point to georam $de00
-TODO Use 02 to write to georam as a new file
-If $b9 > 02 then get target memory vector from network
-return: 
-  $fa/$fb length of data
-  $c1/$c2 start address where data were loaded
-  $c3/$c4 end address
+/* Common start of reading a response from server
+return:
+    carry set: error
+    carry clear: ok
+    $fa(hi)/$fb(lo) length of data
 */
-network_getanswer:
+network_getanswer_init:
     lda #$00  // Datenrichtung Port B Eingang
+sta debug+19
     sta $dd03
     lda $dd00
     and #251  // PA2 auf LOW = ESP im Sendemodus
     sta $dd00
     jsr read_byte  // Dummy Byte - um IRQ im ESP anzuschubsen
     jsr read_byte
-    sta $fa  // lo nibble of length of data
+    sta $fa  // hi nibble of length of data
+sta debug+0
     jsr read_byte
-    sta $fb  // hi nibble
+    sta $fb  // lo nibble
+sta debug+1
     
 loaderrorcheck:
     lda $fa
@@ -201,11 +200,48 @@ loaderrorcheck:
     lda #$04
     rts
 noloaderror:
-setloadadress:    
+    clc
+    rts
+
+
+/* Read data from server after command has been issued. Target memory address comes from network (like PRG has it)
+Modified: $fc/$fd
+If $b9 == 0 then get target memory vector from $c3/$c4 (like kernal).
+If $b9 == 1 target sequential write to georam. Make sure georam page is set correctly.
+If $b9 >= 2 then use address received as first two bytes of fileit to point to georam $de00
+TODO Use 02 to write to georam as a new file
+If $b9 > 02 then get target memory vector from network
+return: 
+  $fa/$fb length of data
+  $c1/$c2 start address where data were loaded
+  $c3/$c4 end address
+*/
+network_getanswer:
+lda #$05
+sta debug+2
+
+    jsr network_getanswer_init
+    bcc ng_netinitok
+    // TODO print error status
+    rts
+ng_netinitok:
+    // subtract 2 from length because it was read already as target memory address ($fa=hi, $fb=lo)
+    lda $fb
+    sec
+    sbc #$02
+    sta $fb
+sta debug+3
+    lda $fa
+    sbc #$00
+    sta $fa
+sta debug+4
+
     jsr read_byte
-    sta $fc
+    sta $fc  // target memory address
     jsr read_byte
     sta $fd
+lda #$04
+sta debug+5
     lda $b9  // Sekundäradresse holen
     cmp #$00
     bne nga_loadtogeoram
@@ -227,17 +263,23 @@ nga_loadtogeoram:
     jsr startload_to_geo_seq
     jmp load_finished
 nga_loadtoaddress:
+lda #$03
+sta debug+6
     lda $fc  // $b9 >= 2 then take address from network
     sta $c3
     sta $c1  // Load adress start C1 bzw. Ende C3
+sta debug+14
     lda $fd
     sta $c4
     sta $c2
+sta debug+15
     jsr startload_to_mem
     jmp load_finished
 
 load_finished:
 cleanup:      // ESP in Lesemodus schalten    
+    lda #$19
+sta debug+7
     lda #$ff  // Datenrichtung Port B Ausgang
     sta $dd03
     lda $dd00
@@ -248,40 +290,85 @@ cleanup:      // ESP in Lesemodus schalten
     rts
 
 startload_to_mem:
-    ldx $fb  // lo??
-    ldy #$00
-stm_goread:
+    ldx #$00  // hi loop counter
+stx $d021
+    ldy #$00  // lo loop counter
+!:  cpx $fa  // hi nibble of length of data
+    beq stm_goread_lo
+stm_goread_hi:  // copy full pages
     jsr read_byte
-    sta ($fc),y  // lo current address
+    sta ($fc),y  // $fc/$fd where to store data, essentially $de00
     iny
-    bne stm_ycont
+    bne stm_goread_hi
     inc $fd  // hi current address
-stm_ycont:    
-    dex
-    bne stm_goread
-    dec $fa
-    lda $fa
-    cmp #$ff
-    bne stm_goread
-    sty $c3  // lo nibble end address
-    lda $fd
-    sta $c4  // hi niblle end address
+    inx
+    jmp !-
+stm_goread_lo:  // copy last incomplete page
+    dey
+!:  
+    iny
+    cpy $fb  // lo nibble of length of data
+    beq stm_done_last
+    jsr read_byte
+    sta ($fc),y  // $fc/$fd where to store data, essentially $de00
+sty $d021 //MIRROR: porad tady schazi precist 2 byty. na vice to jde, na c64 je na $221c=08, $221d=BF, ma byt 82 a 7d
+    jmp !-
+stm_done_last:
+lda #$de
+sta ($fc),y  // checkni tyto koncovky na $221e=de, $221f=ad
+iny
+lda #$ad
+sta ($fc),y
     rts
+// lda #$02
+// sta debug+8 // zde byl  pro mirror $00c1: a0 00 30 fd
+//     ldx $fb  // lo
+//     ldy #$00
+// stm_goread:
+//     jsr read_byte
+//     sta ($fc),y  // lo current address
+//     iny
+//     bne stm_ycont
+//     inc $fd  // hi current address
+// stm_ycont:    
+//     dex
+//     bne stm_goread
+//     dec $fa  // hi nibble of length of data
+//     lda $fa
+//     cmp #$ff
+//     bne stm_goread
+//     sty $c3  // lo nibble end address
+// sty debug+16
+//     lda $fd
+//     sta $c4  // hi niblle end address
+// sta debug+18
+// lda $fc
+// sta debug+17
+//     rts
 
 startload_to_geo_seq:
+    ldx #$00
     ldy #$00
-stgs_goread:
+!:  cpx $fa  // hi nibble of length of data
+    beq stgs_goread_lo
+stgs_goread_hi:  // copy full pages
     jsr read_byte
-    sta ($fc),y  // lo current address
+    sta ($fc),y  // $fc/$fd where to store data, essentially $de00
     iny
-    bne stgs_ycont
+    bne stgs_goread_hi
     jsr georam_next
-stgs_ycont:    
-    bne stgs_goread
-    dec $fa
-    lda $fa
-    cmp #$ff
-    bne stgs_goread
+    inx
+    jmp !-
+stgs_goread_lo:  // copy last incomplete page
+    dey
+!:  
+    iny
+    cpy $fb  // lo nibble of length of data
+    beq stgs_done_last
+    jsr read_byte
+    sta ($fc),y  // $fc/$fd where to store data, essentially $de00
+    jmp !-
+stgs_done_last:
     rts
 
 
@@ -314,7 +401,7 @@ rb_doread:
     nop
     and #$10        // Warten auf NMI FLAG2 = Byte wurde gelesen vom ESP
     beq rb_doread
-    lda $dd01 
+    lda $dd01
     rts
 
 

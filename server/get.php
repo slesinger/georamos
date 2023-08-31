@@ -9,6 +9,7 @@ fclose($fp);
 
 // send binary data as http result
 header('Content-Type: application/octet-stream');
-header('Content-Length: ' . $filesize);
-echo $binary;
+// header('Content-Length: ' . $filesize);
+print($binary);
+print(chr(0x00) . chr(0x00));  // this is a hack because wic64 firware wrongly detects length of payload
 ?>
