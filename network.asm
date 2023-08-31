@@ -166,7 +166,7 @@ stringexit:
 return:
     carry set: error
     carry clear: ok
-    $fa(hi)/$fb(lo) length of data
+    $fa(lo)/$fb(hi) length of data
 */
 network_getanswer_init:
     lda #$00  // Datenrichtung Port B Eingang
@@ -177,17 +177,17 @@ sta debug+19
     sta $dd00
     jsr read_byte  // Dummy Byte - um IRQ im ESP anzuschubsen
     jsr read_byte
-    sta $fa  // hi nibble of length of data
+    sta $fb  // hi nibble of length of data
 sta debug+0
     jsr read_byte
-    sta $fb  // lo nibble
+    sta $fa  // lo nibble
 sta debug+1
     
 loaderrorcheck:
-    lda $fa
+    lda $fb
     cmp #$00
     bne noloaderror
-    lda $fb
+    lda $fa
     cmp #$02
     bne noloaderror
     jsr read_byte
@@ -225,15 +225,15 @@ sta debug+2
     // TODO print error status
     rts
 ng_netinitok:
-    // subtract 2 from length because it was read already as target memory address ($fa=hi, $fb=lo)
-    lda $fb
+    // subtract 2 from length because it was read already as target memory address ($fa=lo,$fb=hi)
+    lda $fa
     sec
     sbc #$02
-    sta $fb
-sta debug+3
-    lda $fa
-    sbc #$00
     sta $fa
+sta debug+3
+    lda $fb
+    sbc #$00
+    sta $fb
 sta debug+4
 
     jsr read_byte
@@ -293,7 +293,7 @@ startload_to_mem:
     ldx #$00  // hi loop counter
 stx $d021
     ldy #$00  // lo loop counter
-!:  cpx $fa  // hi nibble of length of data
+!:  cpx $fb  // hi nibble of length of data
     beq stm_goread_lo
 stm_goread_hi:  // copy full pages
     jsr read_byte
@@ -307,7 +307,7 @@ stm_goread_lo:  // copy last incomplete page
     dey
 !:  
     iny
-    cpy $fb  // lo nibble of length of data
+    cpy $fa  // lo nibble of length of data
     beq stm_done_last
     jsr read_byte
     sta ($fc),y  // $fc/$fd where to store data, essentially $de00
@@ -320,36 +320,11 @@ iny
 lda #$ad
 sta ($fc),y
     rts
-// lda #$02
-// sta debug+8 // zde byl  pro mirror $00c1: a0 00 30 fd
-//     ldx $fb  // lo
-//     ldy #$00
-// stm_goread:
-//     jsr read_byte
-//     sta ($fc),y  // lo current address
-//     iny
-//     bne stm_ycont
-//     inc $fd  // hi current address
-// stm_ycont:    
-//     dex
-//     bne stm_goread
-//     dec $fa  // hi nibble of length of data
-//     lda $fa
-//     cmp #$ff
-//     bne stm_goread
-//     sty $c3  // lo nibble end address
-// sty debug+16
-//     lda $fd
-//     sta $c4  // hi niblle end address
-// sta debug+18
-// lda $fc
-// sta debug+17
-//     rts
 
 startload_to_geo_seq:
     ldx #$00
     ldy #$00
-!:  cpx $fa  // hi nibble of length of data
+!:  cpx $fb  // hi nibble of length of data
     beq stgs_goread_lo
 stgs_goread_hi:  // copy full pages
     jsr read_byte
@@ -363,7 +338,7 @@ stgs_goread_lo:  // copy last incomplete page
     dey
 !:  
     iny
-    cpy $fb  // lo nibble of length of data
+    cpy $fa  // lo nibble of length of data
     beq stgs_done_last
     jsr read_byte
     sta ($fc),y  // $fc/$fd where to store data, essentially $de00
