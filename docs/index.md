@@ -86,13 +86,15 @@ the ` key should give you a left-arrow.
 - browse web
 
 # TODO
+- make meta for all inputs
+- rename focus_input_field to input_field_focus
+- panel footer inf (size, start address)
 - moving does not shift_enter
 - cd to directories
 - cd to D64 like a directory
 - scrollable panel
 - download: prefill origin address
 - panel header info (backend type, current dir)
-- panel footer inf (size, start address)
 - network upload
 - status bar to display status/errors, memory location file is downloaded, loaded from disk
 - backend for disk

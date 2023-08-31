@@ -91,7 +91,7 @@ A: return
 return: A: 0: escape, 1: enter
 */
 focus_input_field:
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr activate_input_field
 
     // set cursor  (by adding $80)
@@ -125,7 +125,7 @@ input_arrow_right_handler:
     jsr cursor_move_right
     jmp input_read_key
 input_letter_handler:
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr input_letter_handler_impl
     jmp input_read_key
 input_enter_handler:
@@ -146,41 +146,41 @@ next_upld_input_handler_impl:
     // if state is upload from, then activate upload to
     cmp #state_upld_from
     bne !+
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr deactivate_input_field
     lda #state_upld_to  // new input field
     sta current_state
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr activate_input_field
     jmp nuihi_end
     // if state is upload to, then activate upload file
 !:  cmp #state_upld_to
     bne !+
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr deactivate_input_field
     lda #state_upld_file  // new input field
     sta current_state
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr activate_input_field
     jmp nuihi_end
     // if state is upload file, then activate upload type
 !:  cmp #state_upld_file
     bne !+
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr deactivate_input_field
     lda #state_upld_type  // new input field
     sta current_state
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr activate_input_field
     jmp nuihi_end
     // if state is upload type, then activate upload from
 !:  cmp #state_upld_type
-    bne !+
-    jsr load_current_input_field_vector
+    bne nuihi_end
+    jsr load_current_state_meta_vector
     jsr deactivate_input_field
     lda #state_upld_from  // new input field
     sta current_state
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     jsr activate_input_field
     jmp nuihi_end
 nuihi_end:
@@ -188,77 +188,12 @@ nuihi_end:
 
 
 /*
-Based on current state, resolve input field vector metadata and load to $fb/$fc
-current_state: see state .enum
-return: $fb/$fc: vector of input field metadata
-*/
-load_current_input_field_vector:
-    pha
-    lda current_state
-    jsr load_state_input_field_vector
-    pla
-    rts
-
-/*
-Load pointer $fb/$fc to input field vector metadata indicated in A
-A: state, see state .enum
-return: $fb/$fc: vector of input field metadata
-*/
-load_state_input_field_vector:
-    cmp #state_upld_from
-    bne !+
-    lda #<input_field_upld_from
-    sta $fb
-    lda #>input_field_upld_from
-    sta $fc
-    jmp load_current_input_field_vector_end
-!:  cmp #state_upld_to
-    bne !+
-    lda #<input_field_upld_to
-    sta $fb
-    lda #>input_field_upld_to
-    sta $fc
-    jmp load_current_input_field_vector_end
-
-!:  cmp #state_upld_file
-    bne !+
-    lda #<input_field_upld_file
-    sta $fb
-    lda #>input_field_upld_file
-    sta $fc
-    jmp load_current_input_field_vector_end
-!:  cmp #state_upld_type
-    bne !+
-    lda #<input_field_upld_type
-    sta $fb
-    lda #>input_field_upld_type
-    sta $fc
-    jmp load_current_input_field_vector_end
-!:  cmp #state_dnld_to
-    bne !+
-    lda #<input_field_dnld_to
-    sta $fb
-    lda #>input_field_dnld_to
-    sta $fc
-    jmp load_current_input_field_vector_end
-!:  cmp #state_cdir_name
-    bne !+
-    lda #<input_field_cdir_name
-    sta $fb
-    lda #>input_field_cdir_name
-    sta $fc
-    jmp load_current_input_field_vector_end
-!:
-load_current_input_field_vector_end:
-    rts
-
-/*
 Move cursor to right in current input field
 current_state: see state .enum
 return: -
 */
 cursor_move_right:
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     // set pointer to char memory
     ldy #16
     lda ($fb), y  // get lo nibble of char memory
@@ -309,7 +244,7 @@ current_state: see state .enum
 return: -
 */
 cursor_move_left:
-    jsr load_current_input_field_vector
+    jsr load_current_state_meta_vector
     // set pointer to char memory
     ldy #16
     lda ($fb), y  // get lo nibble of char memory

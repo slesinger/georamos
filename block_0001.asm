@@ -118,8 +118,7 @@ next_input_handler:
     jmp read_key
 
 reload_panel_impl:
-    ldx current_state
-    jsr load_x_state_meta_vector
+    jsr load_current_state_meta_vector
     jsr panel_backend_fetch
 rpi_end:
     rts
@@ -155,8 +154,7 @@ arrow_down_handler_impl:
     rts
 
 shiftreturn_handler_impl:  // download to memory and execute file
-    ldx current_state
-    jsr load_x_state_meta_vector  // > $fb/$fc panel metadata
+    jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
     ldx $fb  // block
     jsr georam_set  // change to point to file table
@@ -205,8 +203,8 @@ upload_from_memory_impl:
     bne ufmi_end
     /// TODO validate from, to, file, type
     // get $FROM address
-    lda #state_upld_from        // convert "from" address to word
-    jsr load_state_input_field_vector
+    ldx #state_upld_from        // convert "from" address to word
+    jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
     lda $f7
     sta write_file_srcPtr + 1  // set address for write_file will take data from memory
@@ -214,8 +212,8 @@ upload_from_memory_impl:
     sta write_file_srcPtr + 2
     sta create_file_hi_original_address +1
     // get $TO address to calculate number of blocks to copy
-    lda #state_upld_to        // convert "to" address to word
-    jsr load_state_input_field_vector
+    ldx #state_upld_to        // convert "to" address to word
+    jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
     lda $f7
     sta geo_copy_to_geo_last_block_bytes
@@ -243,8 +241,7 @@ ufmi_end:
 
 dowload_to_memory_impl:
     jsr input_line_dnld_render
-    ldx current_state
-    jsr load_x_state_meta_vector  // > $fb/$fc panel metadata
+    jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
     ldx $fb  // block 0-255
     jsr georam_set  // change to point to file table
@@ -272,8 +269,8 @@ dowload_to_memory_impl:
     jmp dfmi_end
 !:  cmp #$01                    // return pressed - download
     bne dfmi_end
-    lda #state_dnld_to          // convert "TO" address to word
-    jsr load_state_input_field_vector
+    ldx #state_dnld_to          // convert "TO" address to word
+    jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
     lda $f7
     sta geo_copy_from_trgPtr + 1  // set address for write_file will take data from memory
@@ -283,7 +280,6 @@ dowload_to_memory_impl:
     // loop over FAT entries and copy data to memory
 dfmi_loop:
     lda dfmi_next_sector
-.break
     sta dfmi_current_sector
     lda dfmi_next_block
     sta dfmi_current_block
@@ -318,7 +314,6 @@ dfmi_last_block_bytes:
     cpx #$ff
     bne !-
 dfmi_end:
-.break
     jsr input_line_empty_render  // input line disappears to acknowledge done
     rts
 dfmi_current_sector: .byte $00

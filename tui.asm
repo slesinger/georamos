@@ -193,41 +193,60 @@ actions_line_render:
 
 
 
-/* Given the current state (what input is active) load $fb/$fc pointer to meta data
+/* Given the state in X (what input is active) load $fb/$fc pointer to meta data
 input:
   X: state. Can be done as 'ldx current_state' before calling this routine
 return:
   $fb/$fc pointer to meta data of current input
 */
 load_x_state_meta_vector:
+    pha
     lda state_meta_ptr_lo,x
     sta $fb
     lda state_meta_ptr_hi,x
     sta $fc
+    pla
+    rts
+
+/* Given the current state (what input is active) load $fb/$fc pointer to meta data
+return:
+  $fb/$fc pointer to meta data of current input
+*/
+load_current_state_meta_vector:
+    pha
+    txa
+    pha
+    ldx current_state
+    lda state_meta_ptr_lo,x
+    sta $fb
+    lda state_meta_ptr_hi,x
+    sta $fc
+    pla
+    tax
+    pla
     rts
 
 //~~~~~~~~~~~ Metadata pointers ~~~~~~~~~~~~~~~
 // current_state for playing role of an index
 state_meta_ptr_lo:
-.byte <panel_left_backend_meta
-.byte <panel_right_backend_meta
-.byte <input_line_upld_meta
-.byte <input_line_dnld_meta
-.byte <input_line_empty_meta
-.byte <input_line_empty_meta
-.byte <input_line_empty_meta
-.byte <input_line_cdir_meta
+.byte <panel_left_backend_meta  // 0
+.byte <panel_right_backend_meta // 1
+.byte <input_field_upld_from    // 2
+.byte <input_field_upld_to      // 3
+.byte <input_field_upld_file    // 4
+.byte <input_field_upld_type    // 5
+.byte <input_field_dnld_to      // 6
+.byte <input_field_cdir_name    // 7
 
 state_meta_ptr_hi:
-.byte >panel_left_backend_meta, >panel_right_backend_meta, >input_line_upld_meta, >input_line_dnld_meta, >input_line_empty_meta, >input_line_empty_meta, >input_line_empty_meta, >input_line_cdir_meta
-    // state_left_panel  = 0, 
-    // state_right_panel = 1, 
-    // state_upld_from   = 2, 
-    // state_upld_to     = 3, 
-    // state_upld_file   = 4,  
-    // state_upld_type   = 5,
-    // state_dnld_to     = 6,
-    // state_cdir_name   = 7
+.byte >panel_left_backend_meta
+.byte >panel_right_backend_meta
+.byte >input_field_upld_from
+.byte >input_field_upld_to
+.byte >input_field_upld_file
+.byte >input_field_upld_type
+.byte >input_field_dnld_to
+.byte >input_field_cdir_name
 
 //~~~~~~~~~~ Screens ~~~~~~~~~~~~~~~
 menu_line_meta:
