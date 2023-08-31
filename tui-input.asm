@@ -90,7 +90,7 @@ Y: <?>
 A: return
 return: A: 0: escape, 1: enter
 */
-focus_input_field:
+input_field_focus:
     jsr load_current_state_meta_vector
     jsr activate_input_field
 
