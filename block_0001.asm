@@ -89,11 +89,13 @@ reload_panel:
     jmp read_key
 
 arrow_up_handler:
-    jsr arrow_up_handler_impl
+    jsr load_current_state_meta_vector
+    jsr panel_cursor_up
     jmp read_key
 
 arrow_down_handler:
-    jsr arrow_down_handler_impl
+    jsr load_current_state_meta_vector
+    jsr panel_cursor_down
     jmp read_key
 
 escape_handler:
@@ -123,35 +125,6 @@ reload_panel_impl:
 rpi_end:
     rts
 
-arrow_up_handler_impl:
-    lda current_state
-    cmp #state_left_panel
-    bne !+
-    ldx #state_left_panel
-    jsr load_x_state_meta_vector
-    jsr panel_cursor_up
-    rts
-!:  cmp #state_right_panel
-    bne !+
-    ldx #state_right_panel
-    jsr load_x_state_meta_vector
-    jsr panel_cursor_up
-    rts
-
-arrow_down_handler_impl:
-    lda current_state
-    cmp #state_left_panel
-    bne !+
-    ldx #state_left_panel
-    jsr load_x_state_meta_vector
-    jsr panel_cursor_down
-    rts
-!:  cmp #state_right_panel
-    bne !+
-    ldx #state_right_panel
-    jsr load_x_state_meta_vector
-    jsr panel_cursor_down
-    rts
 
 shiftreturn_handler_impl:  // download to memory and execute file
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
