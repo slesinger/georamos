@@ -193,7 +193,7 @@ upload_from_memory_impl:
     jsr input_line_upld_render
     lda #state_upld_from
     sta current_state
-    jsr focus_input_field
+    jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
     jsr input_line_empty_render
@@ -261,7 +261,7 @@ dowload_to_memory_impl:
 // TODO make defailt value from dfmi_original_addr
     lda #state_dnld_to
     sta current_state
-    jsr focus_input_field
+    jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
     jsr input_line_empty_render
@@ -352,7 +352,7 @@ create_dir_impl:
     jsr input_line_cdir_render
     lda #state_cdir_name
     sta current_state
-    jsr focus_input_field
+    jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
     jsr input_line_empty_render
