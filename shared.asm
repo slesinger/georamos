@@ -26,9 +26,13 @@
 .var georam_block = $dfff  // 0-255, always store to geomem_block, because it is not possible read from this address
 
 // Kernal
+.const CLRSCR = $E544  // just clear wscreen with spaces
+.const SCINIT = $FF81  // Initialize VIC++
+.const IOINIT = $FF84  // Initialize CIAs++
+.const RESTOR = $FF8A  // Initialize vector table $0314-$0333
 .const SCNKEY = $FF9F
-.const GETIN = $ffe4
-.const CHROUT = $ffd2
+.const CHROUT = $FFD2
+.const GETIN  = $FFE4
 
 state: .enum {
     state_left_panel, 

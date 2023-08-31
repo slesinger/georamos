@@ -101,9 +101,9 @@ exit_to_basic_impl:
     lda #$37
     sta $01             // Enable KERNAL and BASIC
     cli
-    jsr $ff8a           // RESTOR: Initialize vector table $0314-$0333
-    jsr $ff81           // SCINIT: Initialize VIC++
-    jsr $ff84           // IOINIT: Initialize CIAs++
+    jsr RESTOR  // Initialize vector table $0314-$0333
+    jsr SCINIT  // Initialize VIC++
+    jsr IOINIT  // Initialize CIAs++
     rts
 
 // This is needed to disable basic from non-basic area before using firmware upload finction that is within the basic area.
@@ -135,7 +135,7 @@ run_prg:
     sta $01
     cli
     jsr $a659  // reset execute pointer and do CLR
-    jsr $e544  // clear screen
+    jsr CLRSCR  // clear screen
     jmp ($00c1)  // run non-basic program
 
 

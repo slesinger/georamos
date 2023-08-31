@@ -59,7 +59,7 @@ C=+g switch panel to georam
 C=+8/9 switch panel to disk drive 8/9
 C=+n switch panel to network drive
 C=+r refresh directory from source (reload from network or drive)
-
+INST Select file
 
 
 ### Vice positional mapping
@@ -76,39 +76,46 @@ The lower left Control key should be the C= key.
 
 the ` key should give you a left-arrow.
 
+# Use cases
+- use C64 quick and smooth
+- exchange data C64<>pc with ease
+- develop on pc and run on real hw
+- main features are: ... finsh them
+- netlets - geoterm
+- applets
+- browse web
 
 # TODO
-- Commodorrserver v-1541
-- Cbmcommand codeplex com
-- DLH commodore archive
-- swap fa and fb in network as length of data
-- download prefill origin address
 - Display ntp time in upper right corner
 - Detect wic64
-- network upload
+- reload from georam
 - cd to directories
+- cd to D64 like a directory
 - scrollable panel
-- backend for disk
-- disk directory
-- bookmarks to directories
-- Copy and paste clipboard globaly
+- download: prefill origin address
 - panel header info (backend type, current dir)
 - panel footer inf (size, start address)
+- network upload
 - status bar to display status/errors, memory location file is downloaded, loaded from disk
+- backend for disk
+- floppy disk directory
+- help with IP address, mac address
+- bookmarks to directories
+- Copy and paste clipboard globaly
 - copy network to georam
 - copy georam to network
 - upgrade to latest wic64 firware and check if hack in get.php is still needed
-- file view
+- file view as petscii and hex
 - key shortcuts pro spousteni menu ***, ****
 - design UI toolkit
 - replace network.asm jsr CHROUT for correct output to status line
 - set default server config in options
 - tool sd2iec launcher
 - install fastloader
-- load cartridge file
 - translocate  https://github.com/jblang/supermon64/blob/master/README.md
 - visual memory map 40*25=1000
 - display free space in georam
+- inspiration from https://www.c64-wiki.com/wiki/CBM-Command, src https://github.com/CINJ/CBM-Command/tree/master/CBM-Command
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
 
