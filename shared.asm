@@ -34,15 +34,16 @@
 .const CHROUT = $FFD2
 .const GETIN  = $FFE4
 
+// for meta data pointer, see state_meta_ptr_lo and state_meta_ptr_hi in tui.asm
 state: .enum {
-    state_left_panel, 
-    state_right_panel, 
-    state_upld_from, 
-    state_upld_to, 
-    state_upld_file, 
-    state_upld_type,
-    state_dnld_to,
-    state_cdir_name
+    state_left_panel  = 0, 
+    state_right_panel = 1, 
+    state_upld_from   = 2, 
+    state_upld_to     = 3, 
+    state_upld_file   = 4,  
+    state_upld_type   = 5,
+    state_dnld_to     = 6,
+    state_cdir_name   = 7
 }
 
 // sector numbers

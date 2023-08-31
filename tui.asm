@@ -37,8 +37,10 @@ menu_screen_init:
     jsr panel_footer_right_render
     jsr input_line_empty_render
     jsr actions_line_render
-    jsr panel_content_left_render
-    jsr panel_content_right_render
+    ldx #state_left_panel
+    jsr panel_content_render
+    ldx #state_right_panel
+    jsr panel_content_render
     jsr activate_left_panel_func
     rts
 
@@ -191,8 +193,41 @@ actions_line_render:
 
 
 
+/* Given the current state (what input is active) load $fb/$fc pointer to meta data
+input:
+  X: state. Can be done as 'ldx current_state' before calling this routine
+return:
+  $fb/$fc pointer to meta data of current input
+*/
+load_x_state_meta_vector:
+    lda state_meta_ptr_lo,x
+    sta $fb
+    lda state_meta_ptr_hi,x
+    sta $fc
+    rts
 
+//~~~~~~~~~~~ Metadata pointers ~~~~~~~~~~~~~~~
+// current_state for playing role of an index
+state_meta_ptr_lo:
+.byte <panel_left_backend_meta
+.byte <panel_right_backend_meta
+.byte <input_line_upld_meta
+.byte <input_line_dnld_meta
+.byte <input_line_empty_meta
+.byte <input_line_empty_meta
+.byte <input_line_empty_meta
+.byte <input_line_cdir_meta
 
+state_meta_ptr_hi:
+.byte >panel_left_backend_meta, >panel_right_backend_meta, >input_line_upld_meta, >input_line_dnld_meta, >input_line_empty_meta, >input_line_empty_meta, >input_line_empty_meta, >input_line_cdir_meta
+    // state_left_panel  = 0, 
+    // state_right_panel = 1, 
+    // state_upld_from   = 2, 
+    // state_upld_to     = 3, 
+    // state_upld_file   = 4,  
+    // state_upld_type   = 5,
+    // state_dnld_to     = 6,
+    // state_cdir_name   = 7
 
 //~~~~~~~~~~ Screens ~~~~~~~~~~~~~~~
 menu_line_meta:

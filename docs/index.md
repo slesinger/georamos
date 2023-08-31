@@ -86,9 +86,7 @@ the ` key should give you a left-arrow.
 - browse web
 
 # TODO
-- Display ntp time in upper right corner
-- Detect wic64
-- reload from georam
+- moving does not shift_enter
 - cd to directories
 - cd to D64 like a directory
 - scrollable panel

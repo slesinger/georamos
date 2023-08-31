@@ -137,16 +137,13 @@ panel_footer_right_render:
     jsr render
     rts
 
-panel_content_left_render:
-    jsr panel_left_backend_meta_vector
+/*
+X: ldx #state_left_panel or ldx #state_right_panel
+*/
+panel_content_render:
+    jsr load_x_state_meta_vector
     jsr panel_backend_refresh
-    jsr panel_content_render
-    rts
-
-panel_content_right_render:
-    jsr panel_right_backend_meta_vector
-    jsr panel_backend_refresh
-    jsr panel_content_render
+    jsr panel_content_render_impl
     rts
 
 activate_left_panel_func:
@@ -203,10 +200,12 @@ activate_left_panel_func:
     sta activate_vertical_color_column + 1
     lda #$0e  // light blue
     jsr activate_vertical_color
-    jsr panel_content_left_render
+    ldx #state_left_panel
+    jsr panel_content_render
     
     // jsr deactive_cursor
-    jsr panel_left_backend_meta_vector
+    ldx #state_left_panel
+    jsr load_x_state_meta_vector
     lda #%11000000  // cyan
     sta render_cursor_color +1
     jsr render_cursor
@@ -267,10 +266,12 @@ activate_right_panel_func:
     sta activate_vertical_color_column + 1
     lda #$01  // light blue
     jsr activate_vertical_color
-    jsr panel_content_right_render
+    ldx #state_right_panel
+    jsr panel_content_render
 
     // jsr deactive_cursor
-    jsr panel_right_backend_meta_vector
+    ldx #state_right_panel
+    jsr load_x_state_meta_vector
     lda #%11000000  // cyan
     sta render_cursor_color +1
     jsr render_cursor
@@ -516,7 +517,7 @@ pbr_current_block: .byte $00
 /* Use panel_backend_meta as dataprovider backend and render panel's main content
 $fb/$fc: panel_backend_meta pointer
 */
-panel_content_render:
+panel_content_render_impl:
     cld
     // init pointers
     ldy #$03
@@ -638,30 +639,6 @@ file_flags2type:
 !:  lda #$20  // space
     rts
 
-/*
-Load pointer $fb/$fc to input field vector metadata indicated in A
-A: state, see state .enum
-return: $fb/$fc: vector of panel metadata
-*/
-load_state_panel_vector:
-    cmp #state_left_panel
-    bne !+
-    lda #<panel_left_backend_meta
-    sta $fb
-    lda #>panel_left_backend_meta
-    sta $fc
-    jmp lspv_end
-!:  cmp #state_right_panel
-    bne !+
-    lda #<panel_right_backend_meta
-    sta $fb
-    lda #>panel_right_backend_meta
-    sta $fc
-    jmp lspv_end
-!:
-lspv_end:
-    rts
-
 
 /* Get filetable entry of file under cursor of active panel
 input: $fb/$fc: vector of panel metadata
@@ -723,19 +700,6 @@ panel_vertical_char_data:
 panel_vertical_color_data:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
-panel_left_backend_meta_vector:
-    lda #<panel_left_backend_meta
-    sta $fb
-    lda #>panel_left_backend_meta
-    sta $fc
-    rts
-
-panel_right_backend_meta_vector:
-    lda #<panel_right_backend_meta
-    sta $fb
-    lda #>panel_right_backend_meta
-    sta $fc
-    rts
 
 // for panel backend data see, georam.asm
 panel_left_backend_meta:

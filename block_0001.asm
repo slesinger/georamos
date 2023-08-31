@@ -30,7 +30,7 @@ read_key:
     beq menu_drop
     cmp #$30            // 0
     beq exit_to_basic
-    cmp #$52            // R  (with C=)  TODO C= isn ot recognized
+    cmp #$52            // R  (with C=)  TODO C= is not recognized
     beq reload_panel
     cmp #$91            // up arrow
     beq arrow_up_handler
@@ -118,12 +118,8 @@ next_input_handler:
     jmp read_key
 
 reload_panel_impl:
-    // lda $028d  // TODO this does not work together with GETIN
-    // and #%00000010  // Bit #1: 1 = Commodore is currently being pressed.
-    // cmp #%00000010
-    // cmp #$00
-    // bne rpi_end
-    jsr panel_left_backend_meta_vector
+    ldx current_state
+    jsr load_x_state_meta_vector
     jsr panel_backend_fetch
 rpi_end:
     rts
@@ -132,12 +128,14 @@ arrow_up_handler_impl:
     lda current_state
     cmp #state_left_panel
     bne !+
-    jsr panel_left_backend_meta_vector
+    ldx #state_left_panel
+    jsr load_x_state_meta_vector
     jsr panel_cursor_up
     rts
 !:  cmp #state_right_panel
     bne !+
-    jsr panel_right_backend_meta_vector
+    ldx #state_right_panel
+    jsr load_x_state_meta_vector
     jsr panel_cursor_up
     rts
 
@@ -145,18 +143,20 @@ arrow_down_handler_impl:
     lda current_state
     cmp #state_left_panel
     bne !+
-    jsr panel_left_backend_meta_vector
+    ldx #state_left_panel
+    jsr load_x_state_meta_vector
     jsr panel_cursor_down
     rts
 !:  cmp #state_right_panel
     bne !+
-    jsr panel_right_backend_meta_vector
+    ldx #state_right_panel
+    jsr load_x_state_meta_vector
     jsr panel_cursor_down
     rts
 
 shiftreturn_handler_impl:  // download to memory and execute file
-    lda current_state
-    jsr load_state_panel_vector  // > $fb/$fc panel metadata
+    ldx current_state
+    jsr load_x_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
     ldx $fb  // block
     jsr georam_set  // change to point to file table
@@ -243,8 +243,8 @@ ufmi_end:
 
 dowload_to_memory_impl:
     jsr input_line_dnld_render
-    lda current_state
-    jsr load_state_panel_vector  // > $fb/$fc panel metadata
+    ldx current_state
+    jsr load_x_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
     ldx $fb  // block 0-255
     jsr georam_set  // change to point to file table
@@ -283,6 +283,7 @@ dowload_to_memory_impl:
     // loop over FAT entries and copy data to memory
 dfmi_loop:
     lda dfmi_next_sector
+.break
     sta dfmi_current_sector
     lda dfmi_next_block
     sta dfmi_current_block
@@ -317,6 +318,7 @@ dfmi_last_block_bytes:
     cpx #$ff
     bne !-
 dfmi_end:
+.break
     jsr input_line_empty_render  // input line disappears to acknowledge done
     rts
 dfmi_current_sector: .byte $00
