@@ -29,30 +29,6 @@ backend structure filedir entry
 */
 
 
-panel_header_left_render:
-    lda #<default_screen_memory + 40  // start of second line
-    sta panel_header_meta + 4   // targetCharPtr
-    lda #<default_color_memory + 40
-    sta panel_header_meta + 8   // targetColorPtr
-    lda #<panel_header_meta
-    sta $fb
-    lda #>panel_header_meta
-    sta $fc
-    jsr render
-    rts
-
-panel_header_right_render:
-    lda #<default_screen_memory + 40 + 20 // start of mid second line
-    sta panel_header_meta + 4   // targetCharPtr
-    lda #<default_color_memory + 40 + 20
-    sta panel_header_meta + 8   // targetColorPtr
-    lda #<panel_header_meta
-    sta $fb
-    lda #>panel_header_meta
-    sta $fc
-    jsr render
-    rts
-
 panel_vertical_leftl_render:
     lda #<default_screen_memory + 2 * 40  // start of third line
     sta panel_vertical_meta + 4   // targetCharPtr
@@ -852,17 +828,6 @@ gfeofuc_backend_type: .byte $00
 
 
 
-
-panel_header_meta:
-    .byte 20, 1  // width, height
-    .word panel_header_char_data  // sourceCharPtr
-    .word default_screen_memory  // targetCharPtr
-    .word panel_header_color_data  // sourceColorPtr
-    .word default_color_memory  // targetColorPtr
-panel_header_char_data:
-	.byte $2B, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
-panel_header_color_data:
-	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
 panel_vertical_meta:
     .byte 1, 20  // width, height

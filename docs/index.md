@@ -93,6 +93,7 @@ the ` key should give you a left-arrow.
 - cd to D64 like a directory
 - scrollable panel
 - network upload
+- rework panel verticals and scratch panel_vertical_meta
 - make common meta loader (like load_x_state_meta_vector) for non-inputs e.g. input_line_dnld_meta)
 - backend for disk
 - floppy disk directory
