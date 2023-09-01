@@ -28,4 +28,5 @@ scroll with new content line
 cycle input
 type
 hotkey_handler
+status_print(status_code, status_data1, status_data2) - also include new error message status_msg0 in tui.asm
 

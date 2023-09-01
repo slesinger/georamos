@@ -37,7 +37,6 @@ network_get_time:
     jsr network_send_command
     jsr network_getanswer_init
     bcc ngt_ok
-    // TODO print error status
     rts
 ngt_ok:
     lda #default_screen_memory_lo + 29
@@ -101,6 +100,7 @@ X: pointer to file table entry
 return:
   $c1/$c2 start address where data were loaded
   $c3/$c4 end address
+  In case of error return carry flag set and A=4
 */
 network_get:
     pha
@@ -227,7 +227,7 @@ sta debug+0
     jsr read_byte
     sta $fa  // lo nibble
 sta debug+1
-    
+
 loaderrorcheck:
     lda $fb
     cmp #$00
@@ -236,16 +236,17 @@ loaderrorcheck:
     cmp #$02
     bne noloaderror
     jsr read_byte
-    jsr CHROUT  // TODO output error to status line
+    sta status_data1
     jsr read_byte
-    jsr CHROUT
-    lda #space
-    jsr CHROUT
-    sec
+    sta status_data2
+    lda #$01
+    sta status_code
+    jsr status_print
+    sec  // indicate error
     lda #$04
     rts
 noloaderror:
-    clc
+    clc  // success
     rts
 
 
@@ -267,7 +268,6 @@ sta debug+2
 
     jsr network_getanswer_init
     bcc ng_netinitok
-    // TODO print error status
     rts
 ng_netinitok:
     // subtract 2 from length because it was read already as target memory address ($fa=lo,$fb=hi)
@@ -356,7 +356,7 @@ stm_goread_lo:  // copy last incomplete page
     beq stm_done_last
     jsr read_byte
     sta ($fc),y  // $fc/$fd where to store data, essentially $de00
-sty $d021 //MIRROR: porad tady schazi precist 2 byty. na vice to jde, na c64 je na $221c=08, $221d=BF, ma byt 82 a 7d
+sty $d021
     jmp !-
 stm_done_last:
 lda #$de

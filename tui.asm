@@ -192,6 +192,96 @@ actions_line_render:
     rts
 
 
+/* Use line 24 for status messages
+input:
+    status_code: this resolves to status message if recognized
+    status_data1 and 2: codes to be printed in the beginning of the status message. Optional, must be cleard in every call of this routine.
+return: -
+*/
+status_print:
+    pha  // save everything
+    txa
+    pha
+    tya
+    pha
+    lda $fb
+    sta ps_fb
+    lda $fc
+    sta ps_fc
+    jsr status_clear
+    // print data1 and data2 as hex
+    lda status_data1
+    jsr byte_to_hex_string
+    sta $0798
+    stx $0799
+    lda status_data2
+    jsr byte_to_hex_string
+    sta $079b
+    stx $079c
+    // print status message
+    ldy status_code
+    lda status_msg_lo, y
+    sta $fb
+    lda status_msg_hi, y
+    sta $fc
+    lda #$9e
+    sta ps1 + 1  // init screen cursor position
+    ldy #$00
+!:  lda ($fb), y
+    cmp #$00
+    beq ps_msg_done
+ps1:sta $079e
+    inc ps1 + 1
+    iny
+    jmp !-
+ps_msg_done:
+    lda ps_fb  // restore everything
+    sta $fb
+    lda ps_fc
+    sta $fc
+    pla
+    tay
+    pla
+    tax
+    pla
+    rts
+status_code: .byte $ff
+status_data1: .byte $ff
+status_data2: .byte $ff
+ps_fb: .byte $ff
+ps_fc: .byte $ff
+status_msg_lo:
+    .byte <status_msg00
+    .byte <status_msg01
+    .byte <status_msg02
+status_msg_hi:
+    .byte >status_msg00
+    .byte >status_msg01
+    .byte >status_msg02
+status_msg00: .text "unknown message"; .byte 0
+status_msg01: .text "network error"; .byte 0
+status_msg02: .text "something else"; .byte 0
+
+
+/* Remove any text from status line (line 24)
+input: -
+return: -
+*/
+status_clear:
+    pha
+    tya
+    pha
+    ldy #$00
+    lda #$20
+!:  sta $0798, y
+    iny
+    cpy #$28
+    bne !-
+    pla
+    tay
+    pla
+    rts
+
 
 /* Given the state in X (what input is active) load $fb/$fc pointer to meta data
 input:

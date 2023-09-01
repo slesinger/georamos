@@ -117,6 +117,7 @@ next_input_handler:
     bne !+
     jsr activate_left_panel_func
     jsr network_get_time  // good time to update the time
+    jsr status_clear
     jmp read_key
 
 reload_panel_impl:
@@ -138,6 +139,9 @@ shiftreturn_handler_impl:  // download to memory and execute file
     beq shi_end     // skip directory
     pha
     jsr network_get
+    bcc network_get_ok
+    rts   // return on error, do nothing
+network_get_ok:
     pla
     cmp #%10000000  // check if is PRG
     bne shi_end     // skip non-PRG

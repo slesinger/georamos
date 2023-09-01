@@ -86,32 +86,35 @@ the ` key should give you a left-arrow.
 - browse web
 
 # TODO
-- moving hondani demo does not run on shift_enter
-- status bar to display status/errors, memory location file is downloaded, loaded from disk
+- print status for results of download, upload
+- enter to download to original address only without executing
+- check georam upload and download works
+- replace network.asm jsr CHROUT for correct output to status line
+- footer for network backend
 - cd to directories
 - cd to D64 like a directory
+- header for network backend
 - scrollable panel
 - network upload
 - rework panel verticals and scratch panel_vertical_meta (e.g. input_line_empty_meta)
 - make common meta loader (like load_x_state_meta_vector) for non-inputs e.g. input_line_dnld_meta)
 - backend for disk
 - floppy disk directory
+- copy georam to network
+- copy network to georam
+- upgrade to latest wic64 firware and check if hack in get.php is still needed
 - help with IP address, mac address
 - bookmarks to directories
 - Copy and paste clipboard globaly
-- copy network to georam
-- copy georam to network
-- upgrade to latest wic64 firware and check if hack in get.php is still needed
 - file view as petscii and hex
 - key shortcuts pro spousteni menu ***, ****
 - design UI toolkit
-- replace network.asm jsr CHROUT for correct output to status line
 - set default server config in options
 - tool sd2iec launcher
 - install fastloader
-- translocate  https://github.com/jblang/supermon64/blob/master/README.md
-- visual memory map 40*25=1000
 - display free space in georam
+- visual memory map 40*25=1000
+- translocate  https://github.com/jblang/supermon64/blob/master/README.md
 - inspiration from https://www.c64-wiki.com/wiki/CBM-Command, src https://github.com/CINJ/CBM-Command/tree/master/CBM-Command
 ### tried and failed quickly
 - [ ] jump vector from zero page to easy menu start, e.g. sys 12,, ted SYS 56832
