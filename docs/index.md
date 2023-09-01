@@ -86,11 +86,9 @@ the ` key should give you a left-arrow.
 - browse web
 
 # TODO
-- panel footer inf (size, start address)
 - moving does not shift_enter
 - download: prefill origin address
 - status bar to display status/errors, memory location file is downloaded, loaded from disk
-- panel header info (backend type, current dir)
 - cd to directories
 - cd to D64 like a directory
 - scrollable panel

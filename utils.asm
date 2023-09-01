@@ -31,7 +31,27 @@ mmba_b: .byte $00
 mmba_result: .byte $00, $00
 
 
-/* convert A from petscii fromat used in georam file to Extended 
+/* byte to decimal string
+A: input byte
+return:
+    a: high character (left)
+    x: low character (right)
+*/
+byte_to_hex_string:
+    pha
+    and #%00001111
+    jsr int2petscii  // low
+    tax
+    pla
+    lsr
+    lsr
+    lsr
+    lsr
+    jsr int2petscii  // high
+    rts
+
+
+/* convert A from petscii format used in georam file to Extended 
    Background Color format used in screen memory - first quater (blue bkg)
    See http://petscii.krissz.hu and load screens/menu.pe
 A: petscii character
@@ -72,6 +92,23 @@ petscii2int:
 !:  pla
     sec
     sbc #$37  // shift $41-$46 > $0a-$f
+    rts
+
+
+/* Usefull when converting int $0-$f to hex encoded petsci char. 
+A: int
+return: 
+  A: petscii character
+*/
+int2petscii:
+    cmp #$0a
+    bcc i2p_num  // branch if < $0a, then A is a number
+    sec
+    sbc #$09  // shift $0a-$f > $01-$06
+    rts
+i2p_num:
+    clc
+    adc #$30  // shift $00-$09 > $30-$39
     rts
 
 
@@ -155,6 +192,37 @@ memaddrstr_to_word:
     sta $f7
     rts
 
+
+/* Resolve backend_type (see shared.asm) to single letter string that is used in panel header
+A: backend_type
+    backend_type_georam = 0,  // dir/file table sector for georam
+    backend_type_floppy8 = 63 + 0,  // sector 63 for non georam temp dir/file table, 64 for floppy drive 8
+    backend_type_floppy9 = 63 + 64,  // sector 63 for non georam temp dir/file table, 64 for floppy drive 9
+    backend_type_network = 63 + 128  // sector 63 for non georam temp dir/file table, 128 for network drive
+
+return:
+    A: string
+*/
+backend_type2string:
+    cmp #$00
+    bne !+
+    lda #7  // "G"
+    rts
+!:  and #%11000000
+    cmp #$00
+    bne !+
+    lda #$38  // "8"
+    rts
+!:  cmp #$40
+    bne !+
+    lda #$39  // "9"
+    rts
+!:  cmp #$80
+    bne !+
+    lda #$0e  // "N"
+    rts
+!:  lda #$3f  // "?"
+    rts
 
 // Copy data from source memory pointer to georam
 // geo_copy_to_srcPtr + 1: source address

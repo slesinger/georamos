@@ -44,6 +44,10 @@ state: .enum {
     state_upld_type   = 5,
     state_dnld_to     = 6,
     state_cdir_name   = 7
+    // state_left_panel_header = 8,
+    // state_right_panel_header = 9,
+    // state_left_panel_footer = 10,
+    // state_right_panel_footer = 11
 }
 
 // sector numbers

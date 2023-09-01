@@ -27,20 +27,20 @@ menu_screen_init:
 	lda #$03
 	sta $D024
     jsr menu_line_render
-    jsr panel_header_left_render
-    jsr panel_header_right_render
     jsr panel_vertical_leftl_render
     jsr panel_vertical_leftr_render
     jsr panel_vertical_rightl_render
     jsr panel_vertical_rightr_render
-    jsr panel_footer_left_render
-    jsr panel_footer_right_render
     jsr input_line_empty_render
     jsr actions_line_render
     ldx #state_left_panel
     jsr panel_content_render
+    jsr panel_header_render
+    jsr panel_footer_render
     ldx #state_right_panel
     jsr panel_content_render
+    jsr panel_header_render
+    jsr panel_footer_render
     jsr activate_left_panel_func
     rts
 

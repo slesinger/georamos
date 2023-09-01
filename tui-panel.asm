@@ -101,41 +101,6 @@ panel_vertical_rightr_render:
     jsr render
     rts
 
-panel_footer_left_render:
-    lda #default_screen_memory_lo + $70  // start of 23line
-    sta panel_header_meta + 4   // targetCharPtr
-    lda #default_screen_memory_hi + $03  // start of 23line
-    sta panel_header_meta + 5   // targetCharPtr
-
-    lda #default_color_memory_lo + $70
-    sta panel_header_meta + 8   // targetColorPtr
-    lda #default_color_memory_hi + $03
-    sta panel_header_meta + 9   // targetColorPtr
-
-    lda #<panel_header_meta
-    sta $fb
-    lda #>panel_header_meta
-    sta $fc
-    jsr render
-    rts
-
-panel_footer_right_render:
-    lda #default_screen_memory_lo + $70 + 20  // mid of 23line
-    sta panel_header_meta + 4   // targetCharPtr
-    lda #default_screen_memory_hi + $03  // start of 23line
-    sta panel_header_meta + 5   // targetCharPtr
-
-    lda #default_color_memory_lo + $70 + 20
-    sta panel_header_meta + 8   // targetColorPtr
-    lda #default_color_memory_hi + $03
-    sta panel_header_meta + 9   // targetColorPtr
-
-    lda #<panel_header_meta
-    sta $fb
-    lda #>panel_header_meta
-    sta $fc
-    jsr render
-    rts
 
 /*
 X: ldx #state_left_panel or ldx #state_right_panel
@@ -315,6 +280,188 @@ render_cursor_color:
     rts
 
 
+/* Update information about backend type and directory of the panel. // TODO This works for georam only
+Note: $fd/$fe destroyed
+Input:
+    $fb/$fc: vector of of meta structure
+return: -
+*/
+panel_header_render:
+    lda $fb   // save $fb/$fc
+    sta gfr_fb
+    lda $fc
+    sta gfr_fc
+
+    jsr get_dirtable_entry_of_panel  // $fb/$fc pointing to dirtable entry now
+    sta ghr_backend_type
+    lda #$00 //sector
+    ldx $fb  // block
+    jsr georam_set  // change to point to file table
+    lda $fc  // entry pointer
+    clc
+    adc #2 + 16 - 1  // move to end of filename
+    tax
+
+    lda gfr_fb  // restore $fb/$fc
+    sta $fb
+    lda gfr_fc
+    sta $fc
+
+    ldy #$07
+    lda ($fb), y  // screen offset
+    sta $fd  // lo nibble of screen to write to
+    iny
+    lda ($fb), y  // screen offset
+    clc
+    adc #default_screen_memory_hi  // point to screen memory to $04xx
+    sta $fe  // hi nibble
+    ldy #$00
+    lda #$2B  // +
+    sta ($fd), y
+    iny
+
+    lda ghr_backend_type
+    jsr backend_type2string
+    sta ($fd), y
+    iny
+    lda #$3a  // :
+    sta ($fd), y
+    ldy #19
+    lda #$2B  // +
+    sta ($fd), y
+
+    dey
+    lda #$20
+    sta phr_cmp + 1
+!:  lda pagemem, x  // read dir name, 16 chars
+phr_cmp:
+    cmp #$20
+    bne phr_not_space
+    lda #$2d  // -
+phr_not_space2:
+    sta ($fd), y  // copy dir name backwards
+    dey
+    dex
+    cpy #2 // is at start of file name?
+    bne !-
+    rts
+phr_not_space:
+    pha
+    lda #$ff  // disable comparison to space once some non space character is found going backwards over the filename
+    sta phr_cmp + 1
+    pla
+    jmp phr_not_space2
+ghr_backend_type: .byte $ff
+
+
+/* Update information about size and start address of file under cursor. // TODO This works for georam only
+Note: $fd/$fe destroyed
+Input:
+    $fb/$fc: vector of of meta structure
+return: -
+*/
+panel_footer_render:
+    lda $fb   // save $fb/$fc
+    sta gfr_fb
+    lda $fc
+    sta gfr_fc
+    jsr get_filetable_entry_of_file_under_cursor
+    // get file size
+    lda #$00 //sector
+    ldx $fb  // block
+    jsr georam_set  // change to point to file table
+    ldx $fc  // entry pointer
+    inx  // file size
+    lda pagemem, x  // get file flags
+    sta gfr_file_size
+    lda $fc  // entry pointer
+    clc
+    adc #18  // move to original address hi nibble pointer
+    tax
+    lda pagemem, x
+    sta gfr_start_address
+    clc
+    adc gfr_file_size
+    sec
+    sbc #1
+    sta gfr_end_address  // TODO lo nibble of end address, loop over to the last FAT record is needed
+    // render chars
+    lda gfr_fb
+    sta $fb
+    lda gfr_fc
+    sta $fc
+    ldy #$07  
+    lda ($fb), y  // screen offset
+    clc
+    adc #$48  // add offset to move to footer
+    sta $fd  // lo nibble of screen to write to
+    iny
+    lda ($fb), y  // screen offset
+    clc
+    adc #default_screen_memory_hi + 3  // point to screen memory to $04xx, 3 to move to footer
+    sta $fe  // hi nibble
+    ldy #$00
+    lda #$2B  // +
+    sta ($fd), y
+    iny
+    // convert gfr_file_size to decimal string
+    lda gfr_file_size
+    jsr byte_to_hex_string
+    sta ($fd), y
+    iny
+    txa
+    sta ($fd), y
+    iny
+    lda #$2d  // fill middle with -
+!:  sta ($fd), y
+    iny
+    cpy #8    // until
+    bne !-
+    lda #$1b  // [
+    sta ($fd), y
+    iny
+    // print start address
+    lda gfr_start_address
+    jsr byte_to_hex_string
+    sta ($fd), y
+    iny
+    txa
+    sta ($fd), y
+    iny
+    lda #$2e  // .
+    sta ($fd), y
+    iny
+    sta ($fd), y
+    iny
+    lda #$2d  //  -
+    sta ($fd), y
+    iny
+    // print end address
+    lda gfr_end_address
+    jsr byte_to_hex_string
+    sta ($fd), y
+    iny
+    txa
+    sta ($fd), y
+    iny
+    lda #$2e  // .
+    sta ($fd), y
+    iny
+    sta ($fd), y
+    iny
+
+    lda #$1d  // ]
+    sta ($fd), y
+    iny
+    lda #$2B  // +
+    sta ($fd), y
+    rts
+gfr_fb: .byte $ff
+gfr_fc: .byte $ff
+gfr_file_size: .byte $ff  // in blocks
+gfr_start_address: .byte $ff  // hi nibble only
+gfr_end_address: .byte $ff  // hi nibble only until TODO is done
+
 /* Move cursor down
 $fb/$fc: vector of of panel_backend_meta structure
 return: -
@@ -336,6 +483,7 @@ panel_cursor_down:
     lda #%11000000  // cyan
     sta render_cursor_color +1
     jsr render_cursor
+    jsr panel_footer_render
     rts
 
 panel_cursor_up:
@@ -355,6 +503,7 @@ panel_cursor_up:
     lda #%11000000  // cyan
     sta render_cursor_color +1
     jsr render_cursor
+    jsr panel_footer_render
     rts
 
 
@@ -640,6 +789,28 @@ file_flags2type:
     rts
 
 
+/* Get dirtable entry of active panel
+input: $fb/$fc: vector of panel metadata
+return:
+  $fb/$fc: vector pointing to dirtable entry: sector=0, block=$fb, pointer to entry=$fc
+  A: sector of dirtable entry (0 for georam, 63 for network....)
+*/
+get_dirtable_entry_of_panel:
+    ldy #$00
+    lda ($fb), y  // current dir id  0-59
+
+    ldy #$06  // backend type
+    lda ($fb),y 
+    sta gdeop_backend_type
+    lda #28
+    sta $fb  // TODO this is hardccoded first block of dir table
+    lda #$00
+    sta $fc  // TODO this is hardccoded first entry in dir table
+    lda gdeop_backend_type
+    rts
+gdeop_backend_type: .byte $ff
+
+
 /* Get filetable entry of file under cursor of active panel
 input: $fb/$fc: vector of panel metadata
 return:
@@ -654,7 +825,7 @@ get_filetable_entry_of_file_under_cursor:
     lda ($fb), y  // a = cursor position within panel
     tax  // save cursor position
     // TODO calculate cursor position within data backend (which is scrollable), now I assume curpos in panel == selected file in backend
-    // hange $fb/$fc vector to point to backend data
+    // hang $fb/$fc vector to point to backend data
     ldy #$04  // ptr to backend data
     lda ($fb),y
     pha  // save backend data lo nibble
@@ -678,27 +849,31 @@ get_filetable_entry_of_file_under_cursor:
     rts
 gfeofuc_backend_type: .byte $00
 
+
+
+
+
 panel_header_meta:
-    .byte   20, 1  // width, height
-    .word   panel_header_char_data  // sourceCharPtr
-    .word   default_screen_memory  // targetCharPtr
-    .word   panel_header_color_data  // sourceColorPtr
-    .word   default_color_memory  // targetColorPtr
+    .byte 20, 1  // width, height
+    .word panel_header_char_data  // sourceCharPtr
+    .word default_screen_memory  // targetCharPtr
+    .word panel_header_color_data  // sourceColorPtr
+    .word default_color_memory  // targetColorPtr
 panel_header_char_data:
-	.byte	$2B, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
+	.byte $2B, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2D, $2B
 panel_header_color_data:
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
 panel_vertical_meta:
-    .byte   1, 20  // width, height
-    .word   panel_vertical_char_data  // sourceCharPtr
-    .word   default_screen_memory  // targetCharPtr
-    .word   panel_vertical_color_data  // sourceColorPtr
-    .word   default_color_memory  // targetColorPtr
+    .byte 1, 20  // width, height
+    .word panel_vertical_char_data  // sourceCharPtr
+    .word default_screen_memory  // targetCharPtr
+    .word panel_vertical_color_data  // sourceColorPtr
+    .word default_color_memory  // targetColorPtr
 panel_vertical_char_data:
-    .byte   $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21
+    .byte $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21, $21
 panel_vertical_color_data:
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+	.byte $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
 
 // for panel backend data see, georam.asm
@@ -708,7 +883,8 @@ panel_left_backend_meta:
     panel_left_scroll_position: .byte $00  // +2
     panel_left_first_screen_line: .byte $51  // +3
     panel_left_backend_ptr: .word panel_left_backend_data  // +4  // 128 pointers to actual entries
-    panel_left_backend_type: .byte backend_type_network  // +6 see shared.asm
+    panel_left_backend_type: .byte backend_type_network    // +6 see shared.asm
+    .word $0028  // top left corner offset of panel border // +7
 
 panel_right_backend_meta:
     panel_right_current_dir: .byte $00  // root dir "/" id is $00
@@ -717,4 +893,5 @@ panel_right_backend_meta:
     panel_right_first_screen_line: .byte $65
     panel_right_backend_ptr: .word panel_right_backend_data
     panel_right_backend_type: .byte backend_type_georam
+    .word $003c  // top left corner offset of panel border
 
