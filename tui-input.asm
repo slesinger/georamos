@@ -10,7 +10,7 @@ Y: <preserved>
 A: <preserved>
 return: -
 */
-activate_input_field:
+input_field_activate:
     pha
     tya
     pha
@@ -54,7 +54,7 @@ Y: <preserved>
 A: <preserved>
 return: -
 */
-deactivate_input_field:
+input_field_deactivate:
     pha
     tya
     pha
@@ -82,6 +82,43 @@ dif_len:
     rts
 
 
+/* Fill input field with memory address in hexadecimal string
+input:
+    $fb/$fc: vector input field metadata
+    A: high byte of memory address
+    X: low byte of memory address
+return: -
+*/
+input_field_set_addr_value:
+    stx ifsav_low
+    pha
+    ldy #16
+    lda ($fb), y  // get lo nibble of char memory
+    sta $fd
+    iny
+    lda ($fb), y  // get hi nibble of char memory
+    sta $fe
+    pla
+    jsr byte_to_hex_string  // input high addr, returns A high, X low
+    ldy #$00
+    ora #%01000000
+    sta ($fd), y
+    iny
+    txa
+    ora #%01000000
+    sta ($fd), y
+    iny
+    lda ifsav_low
+    jsr byte_to_hex_string  // input low addr, returns A high, X low
+    ora #%01000000
+    sta ($fd), y
+    iny
+    txa
+    ora #%01000000
+    sta ($fd), y
+    rts
+ifsav_low: .byte $ff
+
 /*
 Enter activate input, GETIN loop, set cursor position, handle arrow keys, excape, enter for next field
 current_state: indicates what input field to focus, see state .enum
@@ -92,7 +129,7 @@ return: A: 0: escape, 1: enter
 */
 input_field_focus:
     jsr load_current_state_meta_vector
-    jsr activate_input_field
+    jsr input_field_activate
 
     // set cursor  (by adding $80)
     // activate this
@@ -147,41 +184,41 @@ next_upld_input_handler_impl:
     cmp #state_upld_from
     bne !+
     jsr load_current_state_meta_vector
-    jsr deactivate_input_field
+    jsr input_field_deactivate
     lda #state_upld_to  // new input field
     sta current_state
     jsr load_current_state_meta_vector
-    jsr activate_input_field
+    jsr input_field_activate
     jmp nuihi_end
     // if state is upload to, then activate upload file
 !:  cmp #state_upld_to
     bne !+
     jsr load_current_state_meta_vector
-    jsr deactivate_input_field
+    jsr input_field_deactivate
     lda #state_upld_file  // new input field
     sta current_state
     jsr load_current_state_meta_vector
-    jsr activate_input_field
+    jsr input_field_activate
     jmp nuihi_end
     // if state is upload file, then activate upload type
 !:  cmp #state_upld_file
     bne !+
     jsr load_current_state_meta_vector
-    jsr deactivate_input_field
+    jsr input_field_deactivate
     lda #state_upld_type  // new input field
     sta current_state
     jsr load_current_state_meta_vector
-    jsr activate_input_field
+    jsr input_field_activate
     jmp nuihi_end
     // if state is upload type, then activate upload from
 !:  cmp #state_upld_type
     bne nuihi_end
     jsr load_current_state_meta_vector
-    jsr deactivate_input_field
+    jsr input_field_deactivate
     lda #state_upld_from  // new input field
     sta current_state
     jsr load_current_state_meta_vector
-    jsr activate_input_field
+    jsr input_field_activate
     jmp nuihi_end
 nuihi_end:
     rts

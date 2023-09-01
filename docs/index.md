@@ -86,14 +86,13 @@ the ` key should give you a left-arrow.
 - browse web
 
 # TODO
-- moving does not shift_enter
-- download: prefill origin address
+- moving hondani demo does not run on shift_enter
 - status bar to display status/errors, memory location file is downloaded, loaded from disk
 - cd to directories
 - cd to D64 like a directory
 - scrollable panel
 - network upload
-- rework panel verticals and scratch panel_vertical_meta
+- rework panel verticals and scratch panel_vertical_meta (e.g. input_line_empty_meta)
 - make common meta loader (like load_x_state_meta_vector) for non-inputs e.g. input_line_dnld_meta)
 - backend for disk
 - floppy disk directory

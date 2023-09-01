@@ -231,9 +231,12 @@ dowload_to_memory_impl:
     lda pagemem, x  // first block of file
     sta dfmi_next_block
     // display download dialog
-// TODO make defailt value from dfmi_original_addr
     lda #state_dnld_to
     sta current_state
+    lda dfmi_original_addr     // prefill original address
+    ldx #$00
+    jsr load_current_state_meta_vector
+    jsr input_field_set_addr_value
     jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
