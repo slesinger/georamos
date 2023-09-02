@@ -255,7 +255,10 @@ dowload_to_memory_impl:
     jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
-    jsr status_clear
+    lda #$05
+    sta status_code
+    clc
+    jsr status_print
     jsr activate_left_panel_func
     jmp dfmi_end
 !:  cmp #$01                    // return pressed - download
@@ -303,7 +306,6 @@ dfmi_trgPtr:
 dfmi_last_block_bytes:
     cpx #$ff
     bne !-
-dfmi_end:
     // print status message
     txa
     clc
@@ -314,6 +316,7 @@ dfmi_end:
     lda #$04
     sta status_code
     jsr status_print
+dfmi_end:
     rts
 dfmi_current_sector: .byte $00
 dfmi_current_block: .byte $00

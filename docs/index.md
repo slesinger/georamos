@@ -90,8 +90,6 @@ the ` key should give you a left-arrow.
 - facebook like spaces for c64ers ability to display content from c64 and from pc web, style like intros
 
 # TODO
-- print status for results of upload
-- status carry on error color, carry off info color
 - bug: prefill value of input_field does not prefill value in its metadata, hence download fails
 - footer for network backend
 - shift+enter to download and execute for georam
@@ -99,6 +97,7 @@ the ` key should give you a left-arrow.
 - redraw panel after refresh
 - seq files
 - remove ce00 debug from network.asm
+- create abstract class that all backends will implement
 - cd to directories
 - cd to D64 like a directory
 - header for network backend

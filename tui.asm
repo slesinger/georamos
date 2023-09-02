@@ -199,6 +199,12 @@ status_print:
     pha
     tya
     pha
+    bcc sp_info_color
+    lda #$0a // error color
+    jmp !+
+sp_info_color:
+    lda #$05 // info color
+!:  sta status_color
     lda $fb
     sta ps_fb
     lda $fc
@@ -246,6 +252,8 @@ ps_msg_done:
     sta $fb
     lda ps_fc
     sta $fc
+    lda #$0e // reset color
+    sta status_color
     pla
     tay
     pla
@@ -255,6 +263,7 @@ ps_msg_done:
 status_code: .byte $ff
 status_data1: .byte $ff
 status_data2: .byte $ff
+status_color: .byte $0e
 ps_fb: .byte $ff
 ps_fc: .byte $ff
 status_msg_lo:
@@ -294,7 +303,7 @@ status_clear:
     cpy #$28
     bne !-
     ldy #$00
-    lda #$0a
+    lda status_color
 !:  sta $db98, y
     iny
     cpy #$28
