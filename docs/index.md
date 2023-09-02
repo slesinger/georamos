@@ -90,11 +90,11 @@ the ` key should give you a left-arrow.
 - facebook like spaces for c64ers ability to display content from c64 and from pc web, style like intros
 
 # TODO
-- bug: prefill value of input_field does not prefill value in its metadata, hence download fails
 - footer for network backend
 - shift+enter to download and execute for georam
 - enter to download to original address only without executing
 - redraw panel after refresh
+- for panel content also reset d800 color memory
 - seq files
 - remove ce00 debug from network.asm
 - create abstract class that all backends will implement

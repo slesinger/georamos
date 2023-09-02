@@ -101,19 +101,23 @@ input_field_set_addr_value:
     pla
     jsr byte_to_hex_string  // input high addr, returns A high, X low
     ldy #$00
+    sta ($fb), y   // write to input field meta
     ora #%01000000
     sta ($fd), y
     iny
     txa
+    sta ($fb), y   // write to input field meta
     ora #%01000000
     sta ($fd), y
     iny
     lda ifsav_low
     jsr byte_to_hex_string  // input low addr, returns A high, X low
+    sta ($fb), y   // write to input field meta
     ora #%01000000
-    sta ($fd), y
+    sta ($fd), y   // write to screen
     iny
     txa
+    sta ($fb), y   // write to input field meta
     ora #%01000000
     sta ($fd), y
     rts
