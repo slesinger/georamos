@@ -31,7 +31,7 @@ menu_screen_init:
     jsr panel_vertical_leftr_render
     jsr panel_vertical_rightl_render
     jsr panel_vertical_rightr_render
-    jsr input_line_empty_render
+    jsr status_clear
     jsr actions_line_render
     ldx #state_left_panel
     jsr panel_content_render
@@ -151,14 +151,6 @@ menu_line_render:
     rts
 
 
-input_line_empty_render:
-    lda #<input_line_empty_meta
-    sta $fb
-    lda #>input_line_empty_meta
-    sta $fc
-    jsr render
-    rts
-
 input_line_upld_render:
     lda #<input_line_upld_meta
     sta $fb
@@ -193,9 +185,12 @@ actions_line_render:
 
 
 /* Use line 24 for status messages
+Template example: .text @"network error (<>,\$1e\$1f)"; .byte 0
 input:
-    status_code: this resolves to status message if recognized
-    status_data1 and 2: codes to be printed in the beginning of the status message. Optional, must be cleard in every call of this routine.
+    status_code: this resolves to status template message if recognized
+    status_data1 and 2: codes to be printed in place of template charctersstatus message.
+    status_data1 template characters are < (high octet) and > (low octet)
+    status_data2 template characters are arrow up (high octet) and arrow left (low octet)
 return: -
 */
 status_print:
@@ -209,31 +204,43 @@ status_print:
     lda $fc
     sta ps_fc
     jsr status_clear
-    // print data1 and data2 as hex
-    lda status_data1
-    jsr byte_to_hex_string
-    sta $0798
-    stx $0799
-    lda status_data2
-    jsr byte_to_hex_string
-    sta $079b
-    stx $079c
     // print status message
     ldy status_code
     lda status_msg_lo, y
     sta $fb
     lda status_msg_hi, y
     sta $fc
-    lda #$9e
+    lda #$98
     sta ps1 + 1  // init screen cursor position
     ldy #$00
-!:  lda ($fb), y
-    cmp #$00
+ps2:lda ($fb), y
+    cmp #$00  // end of string
     beq ps_msg_done
-ps1:sta $079e
+    cmp #$3c  // <
+    bne !+
+    lda status_data1
+    jsr byte_to_hex_string
+    jmp ps1
+!:  cmp #$3e  // >
+    bne !+
+    lda status_data1
+    jsr byte_to_hex_string
+    txa
+    jmp ps1
+!:  cmp #$1e  // arrow up
+    bne !+
+    lda status_data2
+    jsr byte_to_hex_string
+    jmp ps1
+!:  cmp #$1f  // arrow left
+    bne ps1
+    lda status_data2
+    jsr byte_to_hex_string
+    txa    
+ps1:sta $0798
     inc ps1 + 1
     iny
-    jmp !-
+    jmp ps2
 ps_msg_done:
     lda ps_fb  // restore everything
     sta $fb
@@ -254,13 +261,22 @@ status_msg_lo:
     .byte <status_msg00
     .byte <status_msg01
     .byte <status_msg02
+    .byte <status_msg03
+    .byte <status_msg04
+    .byte <status_msg05
 status_msg_hi:
     .byte >status_msg00
     .byte >status_msg01
     .byte >status_msg02
+    .byte >status_msg03
+    .byte >status_msg04
+    .byte >status_msg05
 status_msg00: .text "unknown message"; .byte 0
-status_msg01: .text "network error"; .byte 0
-status_msg02: .text "something else"; .byte 0
+status_msg01: .text @"network error (<>,\$1e\$1f)"; .byte 0
+status_msg02: .text @"uploaded <> $\$1e\$1f"; .byte 0
+status_msg03: .text "georam full. last sector <>"; .byte 0
+status_msg04: .text @"last address $\$1e\$1f<>"; .byte 0
+status_msg05: .text "cancelled"; .byte 0
 
 
 /* Remove any text from status line (line 24)
@@ -274,6 +290,12 @@ status_clear:
     ldy #$00
     lda #$20
 !:  sta $0798, y
+    iny
+    cpy #$28
+    bne !-
+    ldy #$00
+    lda #$0a
+!:  sta $db98, y
     iny
     cpy #$28
     bne !-
@@ -348,17 +370,6 @@ menu_line_meta:
 menu_line_char_data:  // 20 per ass line
 	.byte	$8C, $C5, $C6, $D4, $E0, $86, $C9, $CC, $C5, $E0, $83, $CD, $C4, $E0, $8F, $D0, $D4, $C9, $CF, $CE, $D3, $E0, $92, $C9, $C7, $C8, $D4, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0
 menu_line_color_data:
-	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-
-input_line_empty_meta:
-    .byte   40, 1  // width, height
-    .word   input_line_empty_char_data  // sourceCharPtr
-    .byte   default_screen_memory_lo + $98, default_screen_memory_hi + $03  // targetCharPtr
-    .word   input_line_empty_color_data  // sourceColorPtr
-    .byte   default_color_memory_lo + $98, default_color_memory_hi + $03 // targetColorPtr
-input_line_empty_char_data:
-    .byte   $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-input_line_empty_color_data:
 	.byte	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
 
 input_line_upld_meta:

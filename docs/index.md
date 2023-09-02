@@ -81,28 +81,41 @@ the ` key should give you a left-arrow.
 - exchange data C64<>pc with ease
 - develop on pc and run on real hw
 - main features are: ... finsh them
-- netlets - geoterm
+- netlets - geoterm providing UI from PHP, allow "links" to download and execute code on c64 while being in geoterm mode (applets)
 - applets
 - browse web
+- access catalogs - google images, fonts, sids, csdb.dk, google maps, database
+- net endpoint for DB operations CRUD on collections
+- provide collection of best tools (font editor,...)
+- facebook like spaces for c64ers ability to display content from c64 and from pc web, style like intros
 
 # TODO
-- print status for results of download, upload
-- enter to download to original address only without executing
-- check georam upload and download works
-- replace network.asm jsr CHROUT for correct output to status line
+- print status for results of upload
+- status carry on error color, carry off info color
+- bug: prefill value of input_field does not prefill value in its metadata, hence download fails
 - footer for network backend
+- shift+enter to download and execute for georam
+- enter to download to original address only without executing
+- redraw panel after refresh
+- seq files
+- remove ce00 debug from network.asm
 - cd to directories
 - cd to D64 like a directory
 - header for network backend
 - scrollable panel
 - network upload
-- rework panel verticals and scratch panel_vertical_meta (e.g. input_line_empty_meta)
+- delete file
+- rework panel verticals and scratch panel_vertical_meta (e.g. input_line_XXX_meta)
 - make common meta loader (like load_x_state_meta_vector) for non-inputs e.g. input_line_dnld_meta)
+- go over TODO in code
+- make experianece from geram and net same
+
+- convenient function to fill memory 0800-9fff with 00
 - backend for disk
 - floppy disk directory
 - copy georam to network
 - copy network to georam
-- upgrade to latest wic64 firware and check if hack in get.php is still needed
+- upgrade to latest wic64 firware (done to standard fw) and check if hack in get.php is still needed
 - help with IP address, mac address
 - bookmarks to directories
 - Copy and paste clipboard globaly

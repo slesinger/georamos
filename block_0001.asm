@@ -173,11 +173,14 @@ upload_from_memory_impl:
     jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
-    jsr input_line_empty_render
+    lda #$05
+    sta status_code
+    clc
+    jsr status_print
     jsr activate_left_panel_func
     jmp ufmi_end
 !:  cmp #$01                    // return pressed - upload
-    bne ufmi_end
+    bne ufmi_end  // assert other status
     /// TODO validate from, to, file, type
     // get $FROM address
     ldx #state_upld_from        // convert "from" address to word
@@ -211,7 +214,15 @@ upload_from_memory_impl:
     sta create_file_parent_filename +2
     jsr create_file  // > $fb/$fc sector/block of data to write
     jsr write_file
-    jsr input_line_empty_render  // input line disappears to acknowledge done
+    // print status message
+    lda create_file_parent_size_blocks +1
+    sta status_data1
+    lda geo_copy_to_geo_last_block_bytes
+    sta status_data2
+    lda #$02
+    sta status_code
+    clc
+    jsr status_print
 ufmi_end:
     rts
 
@@ -244,7 +255,7 @@ dowload_to_memory_impl:
     jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
-    jsr input_line_empty_render
+    jsr status_clear
     jsr activate_left_panel_func
     jmp dfmi_end
 !:  cmp #$01                    // return pressed - download
@@ -256,7 +267,6 @@ dowload_to_memory_impl:
     sta geo_copy_from_trgPtr + 1  // set address for write_file will take data from memory
     lda $f8
     sta geo_copy_from_trgPtr + 2
-
     // loop over FAT entries and copy data to memory
 dfmi_loop:
     lda dfmi_next_sector
@@ -294,7 +304,16 @@ dfmi_last_block_bytes:
     cpx #$ff
     bne !-
 dfmi_end:
-    jsr input_line_empty_render  // input line disappears to acknowledge done
+    // print status message
+    txa
+    clc
+    adc dfmi_trgPtr +1
+    sta status_data1
+    lda dfmi_trgPtr +2
+    sta status_data2
+    lda #$04
+    sta status_code
+    jsr status_print
     rts
 dfmi_current_sector: .byte $00
 dfmi_current_block: .byte $00
@@ -335,13 +354,17 @@ create_dir_impl:
     jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
-    jsr input_line_empty_render
+    jsr status_clear
     jsr activate_left_panel_func
     jmp cfmi_end
 !:  cmp #$01                    // return pressed - download
     bne cfmi_end
 cfmi_end:
-    // jsr input_line_empty_render  // input line disappears to acknowledge done
+    // sta status_data1
+    // sta status_data2
+    // lda #$0x
+    // sta status_code
+    // jsr status_print  // input line disappears to acknowledge done
     rts
 
 

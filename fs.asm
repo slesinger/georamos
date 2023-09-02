@@ -197,6 +197,8 @@ write_file_srcPtr +1, +2: ptr to data to write
 */
 write_file:
     lda #$01  // start counting from 1 instead 0, because last block has different handling
+    cmp write_file_count_blocks
+    beq wf_last_block
     sta write_file_current_block
 wf_block:
     jsr georam_set_fbfc  // switch sector/block to write out data, infered by create_file or find_free_fat_entry
@@ -305,6 +307,11 @@ fffe_non_block0:
     cmp geomem_block
     bne !--
     // disk full
+    sta status_data1
+    sta status_data2
+    lda #$03
+    sta status_code
+    jsr status_print
     lda #$ff
     sta $fb
     sta $fc

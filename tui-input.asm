@@ -166,7 +166,7 @@ input_letter_handler:
     jsr input_letter_handler_impl
     jmp input_read_key
 input_enter_handler:
-    jsr input_line_empty_render
+    jsr status_clear
     jsr activate_left_panel_func
     lda #$01
     rts

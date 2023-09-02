@@ -241,6 +241,7 @@ loaderrorcheck:
     sta status_data2
     lda #$01
     sta status_code
+    sec
     jsr status_print
     sec  // indicate error
     lda #$04
