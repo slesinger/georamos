@@ -273,6 +273,7 @@ status_msg_lo:
     .byte <status_msg03
     .byte <status_msg04
     .byte <status_msg05
+    .byte <status_msg06
 status_msg_hi:
     .byte >status_msg00
     .byte >status_msg01
@@ -280,12 +281,14 @@ status_msg_hi:
     .byte >status_msg03
     .byte >status_msg04
     .byte >status_msg05
+    .byte >status_msg06
 status_msg00: .text "unknown message"; .byte 0
 status_msg01: .text @"network error (<>,\$1e\$1f)"; .byte 0
 status_msg02: .text @"uploaded <> $\$1e\$1f"; .byte 0
 status_msg03: .text "georam full. last sector <>"; .byte 0
 status_msg04: .text @"last address $\$1e\$1f<>"; .byte 0
 status_msg05: .text "cancelled"; .byte 0
+status_msg06: .text "error"; .byte 0
 
 
 /* Remove any text from status line (line 24)

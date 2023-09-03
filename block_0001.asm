@@ -269,11 +269,9 @@ dowload_to_memory_impl:
     lda $f8
     sta fs_download_memory_address + 1
     jsr fs_download
-    txa                         // print ok status message
-    clc
-    adc fs_download_trgPtr +1
+    lda fs_download_last_address
     sta status_data1
-    lda fs_download_trgPtr +2
+    lda fs_download_last_address +1
     sta status_data2
     lda #$04
     sta status_code
