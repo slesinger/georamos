@@ -377,7 +377,7 @@ cfmi_end:
 // A: <preserved>
 // return: -
 init:
-    jsr check_fs
+    jsr fs_check
     rts
 
 

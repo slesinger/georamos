@@ -11,7 +11,7 @@
 // Y: <untouched>
 // A: <preserved>
 // return: -
-check_fs:
+fs_check:
     pha
     txa
     pha
@@ -22,12 +22,12 @@ check_fs:
     and #$c0  // get 2 highest bits 
     cmp #$40  // check if dir flag is set
     beq !+
-    jsr format_fs
+    jsr fs_format
     jmp fs_ok
 !:  lda $de02, x  // first char of filename
     cmp #$2f  // check if it's a slash
     beq fs_ok
-    jsr format_fs
+    jsr fs_format
 fs_ok:
     pla
     tax
@@ -91,7 +91,7 @@ dir_entry_ptr_within_block: .byte $00
 // Y: <preserved>
 // A: <preserved>
 // return: -
-format_fs:
+fs_format:
     pha
     tya
     pha
