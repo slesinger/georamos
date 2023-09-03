@@ -63,8 +63,7 @@ fgs_download_trgPtr:
 dfmi_last_block_bytes:
     cpx #$ff
     bne !-
-    txa                         // print ok status message
-    clc
+    txa                         // calculate last byte address
     adc fgs_download_trgPtr +1
     sta fs_download_last_address
     lda fgs_download_trgPtr +2

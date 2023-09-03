@@ -130,6 +130,7 @@ rpi_end:
 shiftreturn_handler_impl:  // download to memory and execute file
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
+    sta fs_download_backend_type
     and #%00111111  // get just sector part of it
     ldx $fb  // block
     jsr georam_set  // change to point to file table
@@ -140,6 +141,14 @@ shiftreturn_handler_impl:  // download to memory and execute file
     beq shi_end     // skip directory
     pha
     jsr network_get
+
+    // lda #$ff  // user does not specify target address, so use one from dirfiletable
+    // sta fs_download_memory_address
+    // jsr fs_download
+
+
+
+
     bcc network_get_ok
     rts   // return on error, do nothing
 network_get_ok:
@@ -232,6 +241,7 @@ dowload_to_memory_impl:
     jsr input_line_dnld_render
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
+    sta fs_download_backend_type
     and #%00111111  // get just sector part of it
     ldx $fb  // block 0-255
     stx fs_download_dirfile_major

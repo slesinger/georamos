@@ -75,7 +75,7 @@ for($index=0; $index < count($dirArray); $index++) {
             $file_flags = $parent_directory_id + $file_type_bits;
             $file_size = ceil(filesize(BASE_DIR . $entry) / 256);
             $file_name = str_pad($base, 16, " ");
-            $file_original_address = 0;
+            $file_original_address = resolve_original_address(BASE_DIR . $entry, $ext);
             $file_sector_pointer = 0;
             $file_block_pointer = 0;
             $out_line = chr($file_flags) . chr($file_size) . $file_name . chr($file_original_address) . chr($file_sector_pointer) . chr($file_block_pointer);
@@ -98,4 +98,17 @@ for($index=0; $index < count($dirArray); $index++) {
 $missing_entries = MAX_ENTRIES_PER_BLOCK - $current_entry_idx;
 print(str_repeat(chr(0), $missing_entries * FILEDIR_ENTRY_LENGTH + 4));
 
+// function resolve_original_address takes fist byte of file and returns original address but only is the type is prg
+function resolve_original_address($file, $ext) {
+    if ($ext == "PRG") {
+        $handle = fopen($file, "rb");
+        $first_byte = fread($handle, 1);
+        $second_byte = ord(fread($handle, 1));
+        fclose($handle);
+        return $second_byte; 
+    }
+    else {
+        return 0;  // not a prg file
+    }
+}
 ?>

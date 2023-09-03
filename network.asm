@@ -103,54 +103,57 @@ return:
   In case of error return carry flag set and A=4
 */
 network_get:
-    pha
-    // copy file name to command
-    inx  // x point to file name
-    inx
-    ldy #$00
-!:  lda pagemem,x
-    sta command_get_filename, y
-    inx
-    iny    
-    cpy #$10  // 16 chars filename
-    bne !-
-    // find of filename and append file type
-!:  dey
-    lda command_get_filename, y
-    cmp #$20
-    beq !-
-    iny  // first empty space
-    pla  // file type
-    cmp #%10000000  // PRG
-    bne ng_seq
-    lda #$2e  // .
-    sta command_get_filename, y
-    iny
-    lda #$70  // p
-    sta command_get_filename, y
-    // iny
-    lda #$72  // r
-    sta command_get_filename+1, y
-    // iny
-    lda #$67  // g
-    sta command_get_filename+2, y
-    // iny
-    jmp ng_next
-ng_seq:
-    cmp #%11000000  // SEQ
-    bne ng_end
-    lda #$2e  // .
-    sta command_get_filename, y
-    iny
-    lda #$73  // s
-    sta command_get_filename, y
-    iny
-    lda #$65  // e
-    sta command_get_filename+1, y
-    iny
-    lda #$71  // q
-    sta command_get_filename+2, y
-    iny
+//     pha
+//     // copy file name to command
+//     inx  // x point to file name
+//     inx
+//     ldy #$00
+// !:  lda pagemem,x
+//     sta command_get_filename, y
+//     inx
+//     iny    
+//     cpy #$10  // 16 chars filename
+//     bne !-
+//     // find of filename and append file type
+// !:  dey
+//     lda command_get_filename, y
+//     cmp #$20
+//     beq !-
+//     iny  // first empty space
+//     pla  // file type
+//     cmp #%10000000  // PRG
+//     bne ng_seq
+//     lda #$2e  // .
+//     sta command_get_filename, y
+//     iny
+//     lda #$70  // p
+//     sta command_get_filename, y
+//     // iny
+//     lda #$72  // r
+//     sta command_get_filename+1, y
+//     // iny
+//     lda #$67  // g
+//     sta command_get_filename+2, y
+//     // iny
+//     jmp ng_next
+// ng_seq:
+//     cmp #%11000000  // SEQ
+//     bne ng_end
+//     lda #$2e  // .
+//     sta command_get_filename, y
+//     iny
+//     lda #$73  // s
+//     sta command_get_filename, y
+//     iny
+//     lda #$65  // e
+//     sta command_get_filename+1, y
+//     iny
+//     lda #$71  // q
+//     sta command_get_filename+2, y
+//     iny
+
+
+
 ng_next:
     tya
     clc
@@ -161,8 +164,6 @@ ng_next:
     lda #>command_get
     sta $ff
     jsr network_send_command
-    lda #$02  // use target address from file
-    sta $b9
     jsr network_getanswer
 ng_end:
     rts
@@ -356,10 +357,17 @@ stm_goread_lo:  // copy last incomplete page
     cpy $fa  // lo nibble of length of data
     beq stm_done_last
     jsr read_byte
-    sta ($fc),y  // $fc/$fd where to store data, essentially $de00
+    sta ($fc),y  // $fc/$fd where to store data
 sty $d021
     jmp !-
 stm_done_last:
+    tya
+    clc
+    adc $fc
+    sta $c3
+    lda $fd
+    adc #$00
+    sta $c4
 lda #$de
 sta ($fc),y  // checkni tyto koncovky na $221e=de, $221f=ad
 iny

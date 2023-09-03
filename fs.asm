@@ -14,14 +14,22 @@ inputs:
 fs_download_backend_type: see backend_type enum, includes sector also
 fs_download_dirfile_major:
    - for georam block (sector is always 0) of dirfile table
+   - for net    block (sector is always 63) of dirfile table
 fs_download_dirfile_minor:
     - for georam pointer to entry within block of dirfile table
-fs_download_memory_address: in case user specified where to put data instead of using original address
+    - for net    pointer to entry within block of dirfile table
+fs_download_memory_address: in case user specified where to put data instead of using original address, else put here $ffff
 return:
     fs_download_trgPtr +1
     fs_download_trgPtr +2
 */
 fs_download:
+    // switch georam to respective firfile table entry block
+    lda fs_download_backend_type
+    and #%00111111  // get just sector part of it
+    ldx fs_download_dirfile_major
+    jsr georam_set  // change to point to file table
+
     lda fs_download_backend_type
     jsr backend_type2string
     cmp #$07  // georam
@@ -35,6 +43,7 @@ fs_download:
 fd_unsupported_backend_type:
     lda #$06
     sta status_code
+    sec
     jsr status_print
     rts
 fs_download_backend_type: .byte $00  // TODO to be provided by dowload_to_memory_impl
