@@ -33,6 +33,11 @@ fs_download:
     ldx fs_download_dirfile_major
     jsr georam_set  // change to point to file table
 
+    ldx fs_download_dirfile_minor
+    lda pagemem, x  // first sector of file
+    and #%11000000
+    sta fs_download_file_type
+
     lda fs_download_backend_type
     jsr backend_type2string
     cmp #$07  // georam
@@ -56,6 +61,7 @@ fs_download_dirfile_major: .byte $00
 fs_download_dirfile_minor: .byte $00
 fs_download_memory_address: .word $0000
 fs_download_last_address: .word $0000
+fs_download_file_type: .byte $00
 
 // Check if GEORAM is present TODO
 // Check if root directory is present and initialize fs if not

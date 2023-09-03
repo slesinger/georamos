@@ -38,7 +38,7 @@ If this does not work then georam image is broken.
 ### Emulation
 Start emulation by
 ``````
-/usr/local/bin/x64sc -userportdevice 22 -autostartprgmode 1 -autostart /home/honza/projects/c64/projects/georam/georam.prg -moncommands /home/honza/projects/c64/projects/georam/georam.vs
+/usr/local/bin/x64sc -userportdevice 22 -autostartprgmode 1 -autostart /home/honza/projects/c64/projects/georam/georamos.prg -moncommands /home/honza/projects/c64/projects/georam/georamos.vs
 ```
 
 ## Key bindings
@@ -90,30 +90,26 @@ the ` key should give you a left-arrow.
 - facebook like spaces for c64ers ability to display content from c64 and from pc web, style like intros
 
 # TODO
-- create abstract class that all backends will implement
-- shift+enter to download and execute for georam (like in network)
 - network upload
+- create abstract class that all backends will implement
 - footer for network backend
 - redraw panel after refresh and upload
 - for panel content also reset d800 color memory
 - seq files - they just do not have first two bytes original load address as PRG do.
-- remove ce00 debug from network.asm
 - cd to directories
 - cd to D64 like a directory
 - header for network backend
 - scrollable panel
-- network upload
 - delete file
 - rework panel verticals and scratch panel_vertical_meta (e.g. input_line_XXX_meta)
 - make common meta loader (like load_x_state_meta_vector) for non-inputs e.g. input_line_dnld_meta
 - go over TODO in code
-- make experianece from geram and net same
 
 - convenient function to fill memory 0800-9fff with 00
 - backend for disk
 - floppy disk directory
 - copy georam to network
-- copy network to georam
+- copy network to georam - georam always stores PRG without 2 leading address bytes
 - upgrade to latest wic64 firware (done to standard fw) and check if hack in get.php is still needed
 - help with IP address, mac address
 - bookmarks to directories

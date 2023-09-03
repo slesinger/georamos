@@ -6,11 +6,6 @@
 
 // see interface in fs_download
 fs_georam_download:
-    lda fs_download_memory_address
-    sta geo_copy_from_trgPtr +1
-    lda fs_download_memory_address +1
-    sta geo_copy_from_trgPtr +2
-
     lda fs_download_backend_type
     and #%00111111  // get just sector part of it
     ldx fs_download_dirfile_major  // block 0-255
@@ -28,6 +23,29 @@ fs_georam_download:
     lda pagemem, x  // first block of file
     sta fgd_next_block
 
+    lda fs_download_memory_address +1  // check if address specified
+    cmp #$ff
+    beq fgd_no_address
+    lda fs_download_memory_address  // address is specified
+    sta geo_copy_from_trgPtr +1
+    sta $c1
+    lda fs_download_memory_address +1
+    sta geo_copy_from_trgPtr +2
+    sta $c2
+    jmp fgd_address_done
+fgd_no_address:
+.break
+    lda dfmi_original_addr  // only hi nibble
+    sta geo_copy_from_trgPtr +2
+    sta $c2
+    cmp #$08
+    bne !+
+    lda #$01
+    sta $c1
+!:  lda #$00
+    sta geo_copy_from_trgPtr +1
+fgd_address_done:
+
 fgd_loop:
     lda fgd_next_sector
     sta fgd_current_sector
@@ -42,7 +60,6 @@ fgd_loop:
     ldy #$01 // copy 1 block
     jsr geo_copy_from_geo  // download block to memory, this is the actual work
     // if not last block
-    // inc geo_copy_from_trgPtr + 2   // increase target memory hi nibble
     jmp fgd_loop  // repeat
     // if last block
 fgd_last_block:
@@ -67,7 +84,9 @@ dfmi_last_block_bytes:
     adc fgs_download_trgPtr +1
     sta fs_download_last_address
     lda fgs_download_trgPtr +2
+    adc #$00
     sta fs_download_last_address +1
+    clc
     rts
 fgd_current_sector: .byte $00
 fgd_current_block: .byte $00

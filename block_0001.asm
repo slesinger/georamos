@@ -42,7 +42,7 @@ read_key:
     beq next_input_handler
     cmp #$5f            // arrow left to escape  
     beq escape_handler
-    cmp #$0d            // shift + return
+    cmp #$0d            // return
     beq return_handler
     jmp read_key
 
@@ -151,8 +151,7 @@ network_get_ok:
     sta status_code
     clc
     jsr status_print
-    lda fs_download_backend_type
-    and #%11000000
+    lda fs_download_file_type
     cmp #%10000000  // check if is PRG
     bne shi_end     // skip non-PRG
     // execute file
