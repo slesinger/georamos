@@ -791,7 +791,7 @@ gdeop_backend_type: .byte $ff
 input: $fb/$fc: vector of panel metadata
 return:
   $fb/$fc: vector pointing to filetable entry: sector=0, block=$fb, pointer to entry=$fc
-  A: sector of filetable entry (0 for georam, 63 for network....)
+  A: backend type (0 for georam, 63 for network....)
 */
 get_filetable_entry_of_file_under_cursor:
     ldy #$06  // backend type
@@ -807,9 +807,9 @@ get_filetable_entry_of_file_under_cursor:
     pha  // save backend data lo nibble
     iny
     lda ($fb),y
-    sta $fc  // hi nibble ptr to backend data
+    sta $fc  // hi nibble ptr to panel content backend data
     pla
-    sta $fb  // lo nibble ptr to backend data
+    sta $fb  // lo nibble ptr to panel content backend data
 !:  // pointing to backend data
     txa
     asl  // backend data is 2 bytes per entry
@@ -821,7 +821,6 @@ get_filetable_entry_of_file_under_cursor:
     stx $fb
     sta $fc
     lda gfeofuc_backend_type
-    and #%00111111  // get just sector part of it
     rts
 gfeofuc_backend_type: .byte $00
 

@@ -130,6 +130,7 @@ rpi_end:
 shiftreturn_handler_impl:  // download to memory and execute file
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
+    and #%00111111  // get just sector part of it
     ldx $fb  // block
     jsr georam_set  // change to point to file table
     ldx $fc  // entry pointer
@@ -231,20 +232,17 @@ dowload_to_memory_impl:
     jsr input_line_dnld_render
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
+    and #%00111111  // get just sector part of it
     ldx $fb  // block 0-255
+    stx fs_download_dirfile_major
     jsr georam_set  // change to point to file table
     lda $fc  // entry pointer
+    sta fs_download_dirfile_minor
     clc
     adc #18  // skip  to original address (+18) and (+19) bytes of filetable record to point sector pointer to first FAT
     tax
     lda pagemem, x  // first sector of file
-    sta dfmi_original_addr
-    inx // now point to first FAT
-    lda pagemem, x  // first sector of file
-    sta dfmi_next_sector
-    inx
-    lda pagemem, x  // first block of file
-    sta dfmi_next_block
+    sta dfmi_original_addr  // needed for value prefill
     // display download dialog
     lda #state_dnld_to
     sta current_state
@@ -267,87 +265,22 @@ dowload_to_memory_impl:
     jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
     lda $f7
-    sta geo_copy_from_trgPtr + 1  // set address for write_file will take data from memory
+    sta fs_download_memory_address  // set memory address to put data to
     lda $f8
-    sta geo_copy_from_trgPtr + 2
-    // loop over FAT entries and copy data to memory
-dfmi_loop:
-    lda dfmi_next_sector
-    sta dfmi_current_sector
-    lda dfmi_next_block
-    sta dfmi_current_block
-    jsr resolve_next_sector_block // check if this is last block   //!!!!!!!!!!!!!!!!! TODO check this in advance in order to copy last block partially as needed
-    lda dfmi_next_sector
-    cmp #$00
-    beq dfmi_last_block
-    ldx dfmi_current_sector
-    lda dfmi_current_block
-    ldy #$01 // copy 1 block
-    jsr geo_copy_from_geo  // download block to memory, this is the actual work
-    // if not last block
-    // inc geo_copy_from_trgPtr + 2   // increase target memory hi nibble
-    jmp dfmi_loop  // repeat
-    // if last block
-dfmi_last_block:
-    ldx dfmi_current_block
-    lda dfmi_current_sector
-    jsr georam_set  // change to point to file table
-    lda geo_copy_from_trgPtr +1
-    sta dfmi_trgPtr +1
-    lda geo_copy_from_trgPtr +2
-    sta dfmi_trgPtr +2
-    lda dfmi_next_block  // contains number of bytes to copy within last block
-    sta dfmi_last_block_bytes +1
-    ldx #$FF  // copy remaining bytes in last block
-!:  inx
-    lda pagemem, x
-dfmi_trgPtr:
-    sta $ffff,x
-dfmi_last_block_bytes:
-    cpx #$ff
-    bne !-
-    // print status message
-    txa
+    sta fs_download_memory_address + 1
+    jsr fs_download
+    txa                         // print ok status message
     clc
-    adc dfmi_trgPtr +1
+    adc fs_download_trgPtr +1
     sta status_data1
-    lda dfmi_trgPtr +2
+    lda fs_download_trgPtr +2
     sta status_data2
     lda #$04
     sta status_code
     jsr status_print
 dfmi_end:
     rts
-dfmi_current_sector: .byte $00
-dfmi_current_block: .byte $00
 dfmi_original_addr: .byte $00
-dfmi_next_sector: .byte $00
-dfmi_next_block: .byte $00
-
-/* Populate dfmi_next_sector and dfmi_next_block with next FAT record
-input: dfmi_current_sector, dfmi_current_block
-return: dfmi_next_sector, dfmi_next_block
-*/
-resolve_next_sector_block:
-    lda dfmi_current_sector
-    ora #%10000000  // +128
-    tax  // block 128-190: FAT sector pointer table (63 blocks)
-    dex
-    lda #$00  // sector 0
-    jsr georam_set  // change to point to file table
-    ldy dfmi_current_block
-    lda pagemem, y  // get next sector
-    sta dfmi_next_sector
-    lda dfmi_current_sector
-    ora #%11000000  // +192
-    tax  // block 192-254: FAT block pointer table (63 blocks)
-    dex
-    lda #$00  // sector 0
-    jsr georam_set  // change to point to file table
-    ldy dfmi_current_block
-    lda pagemem, y  // get next sector
-    sta dfmi_next_block
-    rts
 
 
 create_dir_impl:

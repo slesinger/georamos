@@ -16,6 +16,7 @@ File system is a common interface to talk to various backends.
 
 
 ## get dirfile table entry pointer
+to be used in dowload_to_memory_impl
 
 ## get content of current dir
 Use directory of current panel
@@ -28,17 +29,20 @@ from memory to backend
 - file name
 - type (prg, seq)
 
+
 ## download
 From backend to memory
 
 **Inputs**
+- backend type
+- dirfile table entry pointer
+- to specified memory address by user. If $ffff then use original address from dirfile table or prg
 
-$fb/$fc: vector of panel metadata - use filename under cursor (includes fs type)
+(How seq files are handled differently? No original address in first two bytes.)
 
-- to original address (georam and seq has high byte resolution only, prg has high and low byte)
-- to specified memory address by user
+**Return**
+- address of last byte of memory after download
 
-How seq files are handled differently? No original address in first two bytes.
 
 ## execute
 download to original address and jmp to first address or run a basic script
@@ -58,6 +62,7 @@ download to original address and jmp to first address or run a basic script
 ## delete directory
 
 # Currently available
+resolve_next_sector_block
 fs_format
 get_first_dir_entry
 get_next_dir_entry
