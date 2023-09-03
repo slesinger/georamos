@@ -93,7 +93,6 @@ the ` key should give you a left-arrow.
 - create abstract class that all backends will implement
 - shift+enter to download and execute for georam (like in network)
 - network upload
-- enter to download to original address only without executing (net+geo)
 - footer for network backend
 - redraw panel after refresh and upload
 - for panel content also reset d800 color memory

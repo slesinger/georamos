@@ -42,10 +42,8 @@ read_key:
     beq next_input_handler
     cmp #$5f            // arrow left to escape  
     beq escape_handler
-    cmp #$8d            // shift + return
-    beq shiftreturn_handler
-    cmp #$0d            // return, TODO change directory
-    beq next_input_handler
+    cmp #$0d            // shift + return
+    beq return_handler
     jmp read_key
 
 help:
@@ -102,8 +100,8 @@ escape_handler:
     inc $d021
     jmp read_key
 
-shiftreturn_handler:  // download and execute file
-    jsr shiftreturn_handler_impl
+return_handler:  // download and execute file
+    jsr return_handler_impl
     jmp read_key
 
 next_input_handler:
@@ -127,7 +125,7 @@ rpi_end:
     rts
 
 
-shiftreturn_handler_impl:  // download to memory and execute file
+return_handler_impl:  // download to memory and execute file
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
     jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: backend type
     sta fs_download_backend_type
