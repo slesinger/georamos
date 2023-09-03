@@ -164,7 +164,7 @@ return:
 */
 network_getanswer_init:
     lda #$00  // Datenrichtung Port B Eingang
-sta debug+19
+// sta debug+19
     sta $dd03
     lda $dd00
     and #251  // PA2 auf LOW = ESP im Sendemodus
@@ -172,10 +172,10 @@ sta debug+19
     jsr read_byte  // Dummy Byte - um IRQ im ESP anzuschubsen
     jsr read_byte
     sta $fb  // hi nibble of length of data
-sta debug+0
+// sta debug+0
     jsr read_byte
     sta $fa  // lo nibble
-sta debug+1
+// sta debug+1
 
 loaderrorcheck:
     lda $fb
@@ -213,9 +213,6 @@ return:
   $c3/$c4 end address
 */
 network_getanswer:
-lda #$05
-sta debug+2
-
     jsr network_getanswer_init
     bcc ng_netinitok
     rts
@@ -225,18 +222,16 @@ ng_netinitok:
     sec
     sbc #$02
     sta $fa
-sta debug+3
+// sta debug+3
     lda $fb
     sbc #$00
     sta $fb
-sta debug+4
+// sta debug+4
 
     jsr read_byte
     sta $fc  // target memory address
     jsr read_byte
     sta $fd
-lda #$04
-sta debug+5
     lda $b9  // Sekundäradresse holen
     cmp #$00
     bne nga_loadtogeoram
@@ -258,23 +253,21 @@ nga_loadtogeoram:
     jsr startload_to_geo_seq
     jmp load_finished
 nga_loadtoaddress:
-lda #$03
-sta debug+6
     lda $fc  // $b9 >= 2 then take address from network
     sta $c3
     sta $c1  // Load adress start C1 bzw. Ende C3
-sta debug+14
+// sta debug+14
     lda $fd
     sta $c4
     sta $c2
-sta debug+15
+// sta debug+15
     jsr startload_to_mem
     jmp load_finished
 
 load_finished:
 cleanup:      // ESP in Lesemodus schalten    
     lda #$19
-sta debug+7
+// sta debug+7
     lda #$ff  // Datenrichtung Port B Ausgang
     sta $dd03
     lda $dd00
@@ -286,7 +279,7 @@ sta debug+7
 
 startload_to_mem:
     ldx #$00  // hi loop counter
-stx $d021
+// stx $d021
     ldy #$00  // lo loop counter
 !:  cpx $fb  // hi nibble of length of data
     beq stm_goread_lo
@@ -306,7 +299,7 @@ stm_goread_lo:  // copy last incomplete page
     beq stm_done_last
     jsr read_byte
     sta ($fc),y  // $fc/$fd where to store data
-sty $d021
+// sty $d021
     jmp !-
 stm_done_last:
     tya
@@ -316,11 +309,11 @@ stm_done_last:
     lda $fd
     adc #$00
     sta $c4
-lda #$de
-sta ($fc),y  // checkni tyto koncovky na $221e=de, $221f=ad
-iny
-lda #$ad
-sta ($fc),y
+// lda #$de
+// sta ($fc),y  // checkni tyto koncovky na $221e=de, $221f=ad
+// iny
+// lda #$ad
+// sta ($fc),y
     rts
 
 startload_to_geo_seq:
