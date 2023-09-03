@@ -103,58 +103,6 @@ return:
   In case of error return carry flag set and A=4
 */
 network_get:
-//     pha
-//     // copy file name to command
-//     inx  // x point to file name
-//     inx
-//     ldy #$00
-// !:  lda pagemem,x
-//     sta command_get_filename, y
-//     inx
-//     iny    
-//     cpy #$10  // 16 chars filename
-//     bne !-
-//     // find of filename and append file type
-// !:  dey
-//     lda command_get_filename, y
-//     cmp #$20
-//     beq !-
-//     iny  // first empty space
-//     pla  // file type
-//     cmp #%10000000  // PRG
-//     bne ng_seq
-//     lda #$2e  // .
-//     sta command_get_filename, y
-//     iny
-//     lda #$70  // p
-//     sta command_get_filename, y
-//     // iny
-//     lda #$72  // r
-//     sta command_get_filename+1, y
-//     // iny
-//     lda #$67  // g
-//     sta command_get_filename+2, y
-//     // iny
-//     jmp ng_next
-// ng_seq:
-//     cmp #%11000000  // SEQ
-//     bne ng_end
-//     lda #$2e  // .
-//     sta command_get_filename, y
-//     iny
-//     lda #$73  // s
-//     sta command_get_filename, y
-//     iny
-//     lda #$65  // e
-//     sta command_get_filename+1, y
-//     iny
-//     lda #$71  // q
-//     sta command_get_filename+2, y
-//     iny
-
-
-
-ng_next:
     tya
     clc
     adc #18  // length of command start

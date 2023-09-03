@@ -9,7 +9,10 @@ fs_net_download:
     ldx fs_download_dirfile_minor
     lda pagemem, x  // get file flags
     and #%11000000  // isolate flags
-    pha  // save file type
+    cmp #%01000000  // check if is directory
+    bne !+          // skip directory
+    rts
+!:  pha  // save file type
 
     ldx fs_download_dirfile_minor
     inx
@@ -60,7 +63,7 @@ fnd_seq:
     iny
 
 fnd_next:
-    lda fs_download_memory_address+2
+    lda fs_download_memory_address+1
     cmp #$ff  // address not specified
     bne !+
     lda #$02  // use target address from file

@@ -129,30 +129,32 @@ rpi_end:
 
 shiftreturn_handler_impl:  // download to memory and execute file
     jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
-    jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: sector
+    jsr get_filetable_entry_of_file_under_cursor  // > $fb/$fc block/entry of filetable record, A: backend type
     sta fs_download_backend_type
-    and #%00111111  // get just sector part of it
-    ldx $fb  // block
-    jsr georam_set  // change to point to file table
-    ldx $fc  // entry pointer
-    lda pagemem, x  // get file flags
-    and #%11000000  // isolate flags
-    cmp #%01000000  // check if is directory
-    beq shi_end     // skip directory
-    pha
-    jsr network_get
-
-    // lda #$ff  // user does not specify target address, so use one from dirfiletable
-    // sta fs_download_memory_address
-    // jsr fs_download
-
-
-
-
+    lda $fb  // block
+    sta fs_download_dirfile_major
+    lda $fc  // entry pointer
+    sta fs_download_dirfile_minor
+    lda #$ff  // user does not specify target address, so use one from dirfiletable
+    sta fs_download_memory_address+1
+    jsr fs_download
     bcc network_get_ok
+    lda #$06 // error status
+    sta status_code
+    sec
+    jsr status_print
     rts   // return on error, do nothing
 network_get_ok:
-    pla
+    lda fs_download_last_address
+    sta status_data1
+    lda fs_download_last_address +1
+    sta status_data2
+    lda #$04 // ok status
+    sta status_code
+    clc
+    jsr status_print
+    lda fs_download_backend_type
+    and #%11000000
     cmp #%10000000  // check if is PRG
     bne shi_end     // skip non-PRG
     // execute file
@@ -270,7 +272,7 @@ dowload_to_memory_impl:
     jsr activate_left_panel_func
     jmp dfmi_end
 !:  cmp #$01                    // return pressed - download
-    bne dfmi_end
+    bne dtmi_error
     ldx #state_dnld_to          // convert "TO" address to word
     jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
@@ -279,12 +281,20 @@ dowload_to_memory_impl:
     lda $f8
     sta fs_download_memory_address + 1
     jsr fs_download
+    bcs dtmi_error
     lda fs_download_last_address
     sta status_data1
     lda fs_download_last_address +1
     sta status_data2
-    lda #$04
+    lda #$04 // ok status
     sta status_code
+    clc
+    jsr status_print
+    rts
+dtmi_error:
+    lda #$06 // error status
+    sta status_code
+    sec
     jsr status_print
 dfmi_end:
     rts

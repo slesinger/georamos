@@ -18,10 +18,13 @@ fs_download_dirfile_major:
 fs_download_dirfile_minor:
     - for georam pointer to entry within block of dirfile table
     - for net    pointer to entry within block of dirfile table
-fs_download_memory_address: in case user specified where to put data instead of using original address, else put here $ffff
+fs_download_memory_address: in case user specified where to put data 
+    instead of using original address, else put fs_download_memory_address+1 $ff
 return:
     fs_download_trgPtr +1
     fs_download_trgPtr +2
+    carry set: error
+    caryy clear: ok
 */
 fs_download:
     // switch georam to respective firfile table entry block
@@ -39,12 +42,14 @@ fs_download:
 !:  cmp #$0e  // network disk
     bne fd_unsupported_backend_type
     jsr fs_net_download
+    clc
     rts
 fd_unsupported_backend_type:
     lda #$06
     sta status_code
     sec
     jsr status_print
+    sec
     rts
 fs_download_backend_type: .byte $00  // TODO to be provided by dowload_to_memory_impl
 fs_download_dirfile_major: .byte $00
