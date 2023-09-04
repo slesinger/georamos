@@ -120,3 +120,34 @@ resolve_next_sector_block:
     rts
 
 
+fs_georam_upload:
+    lda fs_upload_memory_from
+    sta write_file_srcPtr + 1  // set address for write_file will take data from memory
+    lda fs_upload_memory_from +1
+    sta write_file_srcPtr + 2
+    sta create_file_hi_original_address +1
+
+    lda fs_upload_memory_to
+    sta geo_copy_to_geo_last_block_bytes
+    inc fs_upload_memory_to +1
+    lda fs_upload_memory_to +1    // hi nibble of $TO. Number of blocks to copy is $TO_hi - $FROM_hi
+    sec
+    sbc write_file_srcPtr + 2
+    sta create_file_parent_size_blocks +1
+    sta write_file_count_blocks  // count for write_file loop
+
+    lda fs_upload_directory_id
+    sta create_file_parent_directory_id +1
+
+    lda fs_upload_filenamePtr
+    sta create_file_parent_filename +1
+    lda fs_upload_filenamePtr +1
+    sta create_file_parent_filename +2
+
+    lda fs_upload_type
+    sta create_file_parent_file_flags +1
+
+    jsr create_file  // > $fb/$fc sector/block of data to write
+    jsr write_file
+    clc
+    rts

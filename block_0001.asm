@@ -177,12 +177,16 @@ shi_end:
 // return: -
 upload_from_memory_impl:
     jsr input_line_upld_render
+    jsr load_current_state_meta_vector  // > $fb/$fc panel metadata
+    ldy #$06  // backend type
+    lda ($fb),y 
+    sta fs_upload_backend_type
     lda #state_upld_from
     sta current_state
     jsr input_field_focus
     cmp #$00                    // escape pressed - no action
     bne !+
-    lda #$05
+    lda #$05  // cancelled
     sta status_code
     clc
     jsr status_print
@@ -196,37 +200,38 @@ upload_from_memory_impl:
     jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
     lda $f7
-    sta write_file_srcPtr + 1  // set address for write_file will take data from memory
+    sta fs_upload_memory_from
     lda $f8
-    sta write_file_srcPtr + 2
-    sta create_file_hi_original_address +1
+    sta fs_upload_memory_from + 1
     // get $TO address to calculate number of blocks to copy
     ldx #state_upld_to        // convert "to" address to word
     jsr load_x_state_meta_vector
     jsr memaddrstr_to_word
     lda $f7
-    sta geo_copy_to_geo_last_block_bytes
-    inc $f8
-    lda $f8    // $f8 is hi nibble of $TO. Number of blocks to copy is $TO_hi - $FROM_hi
-    sec
-    sbc write_file_srcPtr + 2
-    sta create_file_parent_size_blocks +1
-    sta write_file_count_blocks  // count for write_file loop
+    sta fs_upload_memory_to
+    lda $f8
+    sta fs_upload_memory_to +1
     lda #$00  // root directory  TODO to figure out what directory the browser stands in
     sta create_file_parent_directory_id +1
     lda #$80 // PRG  TODO figure out correct type  $80 PRG or $c0 SEQ
-    sta create_file_parent_file_flags +1
+    sta fs_upload_type
     // filename pointers
     lda #<input_field_upld_file
-    sta create_file_parent_filename +1
+    sta fs_upload_filenamePtr
     lda #>input_field_upld_file
-    sta create_file_parent_filename +2
-    jsr create_file  // > $fb/$fc sector/block of data to write
-    jsr write_file
+    sta fs_upload_filenamePtr +1
+    jsr fs_upload
+    bcc ufmi_ok
+    lda #$06  // error status
+    sta status_code
+    sec
+    jsr status_print
+    rts
+ufmi_ok:
     // print status message
-    lda create_file_parent_size_blocks +1
+    lda fs_upload_size_uploaded
     sta status_data1
-    lda geo_copy_to_geo_last_block_bytes
+    lda fs_upload_size_uploaded +1
     sta status_data2
     lda #$02
     sta status_code

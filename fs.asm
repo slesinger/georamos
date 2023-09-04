@@ -24,10 +24,10 @@ return:
     fs_download_trgPtr +1
     fs_download_trgPtr +2
     carry set: error
-    caryy clear: ok
+    carry clear: ok
 */
 fs_download:
-    // switch georam to respective firfile table entry block
+    // switch georam to respective dirfile table entry block
     lda fs_download_backend_type
     and #%00111111  // get just sector part of it
     ldx fs_download_dirfile_major
@@ -56,12 +56,61 @@ fd_unsupported_backend_type:
     jsr status_print
     sec
     rts
-fs_download_backend_type: .byte $00  // TODO to be provided by dowload_to_memory_impl
+fs_download_backend_type: .byte $00
 fs_download_dirfile_major: .byte $00
 fs_download_dirfile_minor: .byte $00
 fs_download_memory_address: .word $0000
 fs_download_last_address: .word $0000
-fs_download_file_type: .byte $00
+fs_download_file_type: .byte $00  // numeric, see layout.md
+
+
+
+/*
+Creates new file and uploads data from memory
+inputs:
+fs_upload_backend_type: see backend_type enum, includes sector also
+fs_upload_memory_from: in case user specified where to put data 
+    instead of using original address, else put fs_upload_memory_address+1 $ff
+fs_upload_memory_to: in case user specified where to put data 
+fs_upload_directory_id
+fs_upload_filenamePtr: ptr to filename, 16chars max, filled with spaces
+fs_upload_type: numeric, see layout.md
+
+return:
+    fs_upload_size_uploaded
+    carry set: error
+    carry clear: ok
+*/
+fs_upload:
+    lda fs_upload_backend_type
+    jsr backend_type2string
+    cmp #$07  // georam
+    bne !+
+    jsr fs_georam_upload
+    rts
+!:  cmp #$0e  // network disk
+    bne fu_unsupported_backend_type
+    lda $00
+    sta fs_upload_size_uploaded
+    sta fs_upload_size_uploaded +1
+    jsr fs_net_upload
+    clc
+    rts
+fu_unsupported_backend_type:
+    lda #$06
+    sta status_code
+    sec
+    jsr status_print
+    sec
+    rts
+fs_upload_backend_type: .byte $00
+fs_upload_memory_from: .word $0000
+fs_upload_memory_to: .word $0000
+fs_upload_directory_id: .byte $00
+fs_upload_filenamePtr: .word $00
+fs_upload_type: .byte $00
+fs_upload_size_uploaded: .word $0000
+
 
 // Check if GEORAM is present TODO
 // Check if root directory is present and initialize fs if not
@@ -267,6 +316,7 @@ write_file_srcPtr:
     inx
     bne write_file_srcPtr  // copy one full page
     inc write_file_srcPtr +2  // increase memory page to read from
+    inc fs_upload_size_uploaded +1
     jsr save_next_to_pointer_table  // save next block pointer to FAT pointer table, return $fb/$fc as new free sector/block
     inc write_file_current_block
     lda write_file_current_block
@@ -290,6 +340,7 @@ write_file_srcPtr2:
 write_file_srcPtr3:
     cpx #$ff
     bne !-  // copy one full page
+    stx fs_upload_size_uploaded
     jsr save_eof_to_pointer_table  // sector=0 indicates last block, bloc=remaining bytes
     rts
 write_file_current_block: .byte $ff

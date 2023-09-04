@@ -87,3 +87,8 @@ fnd_unsupported_extension:
     sec
     jsr status_print
     rts
+
+
+fs_net_upload:
+    // TODO implement
+    rts
