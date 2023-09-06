@@ -89,9 +89,14 @@ the ` key should give you a left-arrow.
 - provide collection of best tools (font editor,...)
 - facebook like spaces for c64ers ability to display content from c64 and from pc web, style like intros
 
+
 # TODO
+- make net_put looping internally because payload can be max 256 chars
+- konverze v get.php z base16AP do bytes
+- make up mind on try-except casdcading, see status_msg08+"commented out in order to report"
+- po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
 - network upload
-- create abstract class that all backends will implement
+- test geo/net up/download on hw
 - footer for network backend
 - redraw panel after refresh and upload
 - for panel content also reset d800 color memory

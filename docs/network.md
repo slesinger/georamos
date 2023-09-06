@@ -6,23 +6,22 @@ Each response contain first two bytes the target memory address.
 Loads dir/file table in dir/file table format. It is (5+95)*256 in size. Dir/file table restrictions apply and must be enforced by server side.
 
 Resource: /dirfile
-Response: full dirfile table
+Response: full dirfile table of current directory
 
 
 ## network_get
 Retrieve file to store it in memory or georam. This can be used for data files as well as PRG files.
 
-
-
-Resource: /get
+Resource: /get?f=<max16b filename>
 Response:
   - file table entry
   - file data to memory
   - file data to georam To be implemented
 
 
-## network_upload
-Resource: /get/{filename16 type1}
+## network_put
+Resource: /get?f=<max16b filename>&p=<base16AP payoad>
+Payload is sent to server in chunks of 256bytes
 
 
 ## Create Directory

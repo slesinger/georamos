@@ -34,7 +34,6 @@ fs_georam_download:
     sta $c2
     jmp fgd_address_done
 fgd_no_address:
-.break
     lda dfmi_original_addr  // only hi nibble
     sta geo_copy_from_trgPtr +2
     sta $c2

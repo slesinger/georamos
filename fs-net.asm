@@ -5,22 +5,96 @@
 
 // see interface in fs_download
 fs_net_download:
-    // make filename with extension
     ldx fs_download_dirfile_minor
     lda pagemem, x  // get file flags
     and #%11000000  // isolate flags
     cmp #%01000000  // check if is directory
     bne !+          // skip directory
     rts
-!:  pha  // save file type
+!:  pha
+    inx
+    inx
+    txa
+    sta $fe
+    lda #$de
+    sta $ff
+    pla
+    jsr make_filename_with_extension
+    bcs fnd_unsupported_extension
+    pha  // save filename length
+    lda fs_download_memory_address+1
+    cmp #$ff  // address not specified
+    bne !+
+    lda #$02  // use target address from file
+    jmp !++
+!:  lda fs_download_memory_address // use address specified by user
+    sta $c3
+    lda fs_download_memory_address+1
+    sta $c4
+    lda #$00
+!:  sta $b9
+    pla
+    jsr network_get
 
-    ldx fs_download_dirfile_minor
-    inx
-    inx
+    lda $c3
+    sta fs_upload_size_uploaded
+    lda $c4
+    sta fs_upload_size_uploaded +1
+    rts
+fnd_unsupported_extension:
+    lda #$06
+    sta status_code
+    sec
+    jsr status_print
+    rts
+
+
+// see interface in fs_upload
+fs_net_upload:
+    lda fs_upload_filenamePtr
+    sta $fe
+    lda fs_upload_filenamePtr+1
+    sta $ff
+    lda fs_upload_type
+    jsr make_filename_with_extension
+    pha  // save filename length
+
+    lda fs_upload_memory_from
+    sta $c1
+    lda fs_upload_memory_from+1
+    sta $c2
+    // fs_upload_memory_to - fs_upload_memory_from => $c1/$c2 as payload size
+    lda fs_upload_memory_to
+    sec
+    sbc fs_upload_memory_from
+    sta command_put_payload_size
+    lda fs_upload_memory_to+1
+    sbc fs_upload_memory_from+1
+    sta command_put_payload_size +1
+
+    pla  // restore filename length
+    jsr network_put
+    lda $c3
+    sta fs_upload_size_uploaded
+    lda $c4
+    sta fs_upload_size_uploaded+1
+    rts
+
+
+/* When filename.ext parameter is needed for send_command this function takes
+   filename and file type from file table entry and copies the to command_get_filename
+   Final filename is null terminated.
+inputs:
+    A: file type
+    $fe/$ff - vector of filename
+return:
+    A: length of filename with extension
+*/
+make_filename_with_extension:
+!:  pha  // save file type
     ldy #$00
-!:  lda pagemem,x
+!:  lda ($fe),y
     sta command_get_filename, y
-    inx
     iny    
     cpy #$10  // 16 chars filename
     bne !-
@@ -45,50 +119,29 @@ fs_net_download:
     lda #$67  // g
     sta command_get_filename+2, y
     // iny
-    jmp fnd_next
+    lda #$00  // null terminated
+    sta command_get_filename+3, y
+    tya
+    rts
 fnd_seq:
     cmp #%11000000  // SEQ
-    bne fnd_unsupported_extension
+    bne mfwe_unsupported_extension
     lda #$2e  // .
     sta command_get_filename, y
     iny
     lda #$73  // s
     sta command_get_filename, y
-    iny
+    // iny
     lda #$65  // e
     sta command_get_filename+1, y
-    iny
+    // iny
     lda #$71  // q
     sta command_get_filename+2, y
-    iny
-
-fnd_next:
-    lda fs_download_memory_address+1
-    cmp #$ff  // address not specified
-    bne !+
-    lda #$02  // use target address from file
-    jmp !++
-!:  lda fs_download_memory_address // use address specified by user
-    sta $c3
-    lda fs_download_memory_address+1
-    sta $c4
-    lda #$00
-!:  sta $b9
-    jsr network_get
-
-    lda $c3
-    sta fs_download_last_address
-    lda $c4
-    sta fs_download_last_address +1
+    // iny
+    lda #$00  // null terminated
+    sta command_get_filename+3, y
+    tya
     rts
-fnd_unsupported_extension:
-    lda #$06
-    sta status_code
+mfwe_unsupported_extension:
     sec
-    jsr status_print
-    rts
-
-
-fs_net_upload:
-    // TODO implement
     rts

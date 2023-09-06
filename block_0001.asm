@@ -222,10 +222,10 @@ upload_from_memory_impl:
     sta fs_upload_filenamePtr +1
     jsr fs_upload
     bcc ufmi_ok
-    lda #$06  // error status
-    sta status_code
-    sec
-    jsr status_print
+    // before enabling this, think about raising exception lda #$06  // error status
+    // sta status_code
+    // sec
+    // jsr status_print
     rts
 ufmi_ok:
     // print status message

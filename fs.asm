@@ -94,7 +94,10 @@ fs_upload:
     sta fs_upload_size_uploaded
     sta fs_upload_size_uploaded +1
     jsr fs_net_upload
+    bcs upper_error
     clc
+    rts
+upper_error:
     rts
 fu_unsupported_backend_type:
     lda #$06

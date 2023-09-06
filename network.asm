@@ -95,25 +95,24 @@ command_dirfile:
 /* Download file from server.
 Filename will be appended to command_get_filename (max 16+.+3 chars) and total length will be updated as length = 15 + filename length
 Georam must be set to dir/file to respective table block
-A: file type
-X: pointer to file table entry
+A: filename with extension size
 return:
   $c1/$c2 start address where data were loaded
   $c3/$c4 end address
   In case of error return carry flag set and A=4
 */
 network_get:
-    tya
     clc
     adc #18  // length of command start
     sta command_get_size
+    lda #$00
+    sta command_get_size+1
     lda #<command_get
     sta $fe
     lda #>command_get
     sta $ff
     jsr network_send_command
     jsr network_getanswer
-ng_end:
     rts
 command_get:
 .byte W
@@ -123,13 +122,78 @@ command_get_size:
 .byte $21, $67, $65, $74, $2E, $70, $68, $70, $3F, $66, $3D
 //    !    g    e    t    .    p    h    p    ?    f    =
 command_get_filename:
-.fill 20, $20  // space for filename
+.fill 21, $20  // space for filename
+
+
+/* Use http GET tu upload memory content on server as query parameter.
+inputs:
+  A: filename with extension size
+  $c1/$c2 start address where payload data are in memory
+  command_put_payload_size: payload size. 4+11bytes for command and (19) bytes for filename is added in this routine
+return:
+  $c3/$c4 payload size sent to server
+*/
+network_put:
+    clc 
+    adc #21  // filename length + length of command start
+    adc command_put_payload_size
+    sta command_get_size
+    lda #$00
+    adc command_put_payload_size +1
+    bcs np_payload_oversize
+    sta command_get_size+1
+    //add payload size once more becayse payload get converted to base16
+    lda command_get_size
+    clc
+    adc command_put_payload_size
+    sta command_get_size
+    lda command_get_size+1
+    adc command_put_payload_size +1
+    bcs np_payload_oversize
+    sta command_get_size+1
+
+    lda #<command_get
+    sta $fe
+    lda #>command_get
+    sta $ff
+    jsr network_send_command_with_payload
+    rts
+np_payload_oversize:
+    lda #$08
+    sta status_code
+    sec
+    jsr status_print
+    clc
+    rts
+command_put_payload_size: .word $0000
+
 
 /*  Execute command without need to fetch response
 $fe/$ff command to send
 return -
 */
 network_send_command:
+    jsr net_lead
+    ldy #$01
+    lda ($fe),y  // Länge des Kommandos holen
+    sec
+    sbc #$01
+    sta nsc_exit+1  // Als Exit speichern
+    
+    ldy #$ff
+nsc_next:
+    iny
+    lda ($fe),y
+    jsr write_byte
+nsc_exit:
+    cpy #$ff  // fake, end of string
+    bne nsc_next
+    // payload upload may follow in parent routine
+    rts
+
+
+// common network init sequence
+net_lead:
     lda $dd02
     ora #$04
     sta $dd02  // Datenrichtung Port A PA2 auf Ausgang
@@ -138,21 +202,62 @@ network_send_command:
     lda $dd00
     ora #$04   // PA2 auf HIGH = ESP im Empfangsmodus
     sta $dd00
+    rts
 
-    ldy #$01
-    lda ($fe),y  // Länge des Kommandos holen
-    sec
-    sbc #$01
-    sta stringexit+1  // Als Exit speichern
-    
+
+/* Send payload from memory to server. Call only after network_send_command.
+input:
+    $c1/$c2 vector to payload
+    command_put_payload_size: payload size
+return:
+    $c3/$c4 payload size sent to server
+*/
+network_send_command_with_payload:
+    jsr net_lead
     ldy #$ff
-string_next:
+nscwp_nextchar:
     iny
     lda ($fe),y
+    cpy #$04
+    bcc !+  //  if y < 5 then skip
+    cmp #$00
+    beq nscwp_payload_upload
+!:  jsr write_byte
+    jmp nscwp_nextchar
+
+nscwp_payload_upload:
+    lda #$00  // reset sent out bytes counter
+    sta $c3
+    sta $c4
+    lda #$26  // &p=  
     jsr write_byte
-stringexit:
-    cpy #$ff  // fake, end of string
-    bne string_next
+    lda #$70
+    jsr write_byte
+    lda #$3d
+    jsr write_byte
+
+    ldy #$00
+    lda command_put_payload_size +1  // low nibble
+    cmp #$00
+    beq napts_last  // if only < $ff bytes left
+    ldy #$00
+!:  lda ($c1),y
+    jsr write_byte_base16
+    iny
+    bne !-
+    inc $c2  // move to next memory page
+    inc $c4  // increase nytes sent size by $100
+    dec command_put_payload_size +1  // hi nibble
+    beq napts_last 
+    jmp !-
+napts_last:
+!:  lda ($c1),y
+    jsr write_byte_base16
+    inc $c3  // increase nytes sent size by $01
+    iny
+    cpy command_put_payload_size
+    bne !-
+    clc
     rts
 
 
@@ -343,6 +448,26 @@ dowrite:
     beq dowrite
     rts
 
+/* Same as write byte. It will convert byte to base16 and send it to network.
+Example: "A" $01 will be converted to two bytes "01" and then to "AB" and sent to network
+A: byte
+return: -
+*/
+write_byte_base16:
+    pha
+    lsr  // take high 4 bits only
+    lsr
+    lsr
+    lsr
+    clc
+    adc #$41  // move to A to range $41-$50  (ascii A-P)
+    jsr write_byte
+    pla
+    and #%00001111  // take low 4 bits only
+    clc
+    adc #$41  // move to A to range $41-$50  (ascii A-P)
+    jsr write_byte
+    rts
 
 /* Receive byte from network
 return: A byte
