@@ -91,12 +91,8 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-- make net_put looping internally because payload can be max 256 chars
-- konverze v get.php z base16AP do bytes
-- make up mind on try-except casdcading, see status_msg08+"commented out in order to report"
-- po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
-- network upload
 - test geo/net up/download on hw
+- po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
 - footer for network backend
 - redraw panel after refresh and upload
 - for panel content also reset d800 color memory

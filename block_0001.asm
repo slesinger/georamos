@@ -213,7 +213,9 @@ upload_from_memory_impl:
     sta fs_upload_memory_to +1
     lda #$00  // root directory  TODO to figure out what directory the browser stands in
     sta create_file_parent_directory_id +1
-    lda #$80 // PRG  TODO figure out correct type  $80 PRG or $c0 SEQ
+    ldx #state_upld_type   //  prg or seq type  TODO validate values
+    jsr load_x_state_meta_vector
+    jsr screen2filetype
     sta fs_upload_type
     // filename pointers
     lda #<input_field_upld_file
@@ -222,10 +224,10 @@ upload_from_memory_impl:
     sta fs_upload_filenamePtr +1
     jsr fs_upload
     bcc ufmi_ok
-    // before enabling this, think about raising exception lda #$06  // error status
-    // sta status_code
-    // sec
-    // jsr status_print
+    lda #$06  // error status
+    sta status_code
+    sec
+    jsr status_print
     rts
 ufmi_ok:
     // print status message

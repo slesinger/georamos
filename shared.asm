@@ -16,6 +16,7 @@
 .const default_screen_memory = $0400
 .const default_screen_memory_lo = $00
 .const default_screen_memory_hi = $04
+.const status_line = $0798
 .const default_color_memory = $d800
 .const default_color_memory_lo = $00
 .const default_color_memory_hi = $d8

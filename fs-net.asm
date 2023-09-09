@@ -8,6 +8,7 @@ fs_net_download:
     ldx fs_download_dirfile_minor
     lda pagemem, x  // get file flags
     and #%11000000  // isolate flags
+    sta fs_net_download_filetype
     cmp #%01000000  // check if is directory
     bne !+          // skip directory
     rts
@@ -37,9 +38,9 @@ fs_net_download:
     jsr network_get
 
     lda $c3
-    sta fs_upload_size_uploaded
+    sta fs_download_last_address
     lda $c4
-    sta fs_upload_size_uploaded +1
+    sta fs_download_last_address +1
     rts
 fnd_unsupported_extension:
     lda #$06
@@ -47,6 +48,7 @@ fnd_unsupported_extension:
     sec
     jsr status_print
     rts
+fs_net_download_filetype: .byte $00
 
 
 // see interface in fs_upload
@@ -55,14 +57,14 @@ fs_net_upload:
     sta $fe
     lda fs_upload_filenamePtr+1
     sta $ff
+    lda fs_upload_memory_from
+    sta $f8
+    lda fs_upload_memory_from+1
+    sta $f9
     lda fs_upload_type
     jsr make_filename_with_extension
     pha  // save filename length
 
-    lda fs_upload_memory_from
-    sta $c1
-    lda fs_upload_memory_from+1
-    sta $c2
     // fs_upload_memory_to - fs_upload_memory_from => $c1/$c2 as payload size
     lda fs_upload_memory_to
     sec
@@ -71,13 +73,15 @@ fs_net_upload:
     lda fs_upload_memory_to+1
     sbc fs_upload_memory_from+1
     sta command_put_payload_size +1
-
+    lda #$01
+    clc
+    adc command_put_payload_size  // add 1 because last byte is mean to be included
+    sta command_put_payload_size
+    lda #$00
+    adc command_put_payload_size +1
+    sta command_put_payload_size +1
     pla  // restore filename length
     jsr network_put
-    lda $c3
-    sta fs_upload_size_uploaded
-    lda $c4
-    sta fs_upload_size_uploaded+1
     rts
 
 
@@ -112,16 +116,32 @@ make_filename_with_extension:
     iny
     lda #$70  // p
     sta command_get_filename, y
-    // iny
+    iny
     lda #$72  // r
-    sta command_get_filename+1, y
-    // iny
+    sta command_get_filename, y
+    iny
     lda #$67  // g
-    sta command_get_filename+2, y
+    sta command_get_filename, y
+    iny
+
+    lda fs_upload_memory_from  // append original address for prg
+    jsr byte2base16ap
+    sta command_get_filename, y
+    iny
+    txa
+    sta command_get_filename, y
+    iny
+    lda fs_upload_memory_from +1
+    jsr byte2base16ap
+    sta command_get_filename, y
+    iny
+    txa
+    sta command_get_filename, y
     // iny
     lda #$00  // null terminated
-    sta command_get_filename+3, y
+    sta command_get_filename+1, y
     tya
+    clc
     rts
 fnd_seq:
     cmp #%11000000  // SEQ
@@ -131,16 +151,17 @@ fnd_seq:
     iny
     lda #$73  // s
     sta command_get_filename, y
-    // iny
+    iny
     lda #$65  // e
-    sta command_get_filename+1, y
-    // iny
+    sta command_get_filename, y
+    iny
     lda #$71  // q
-    sta command_get_filename+2, y
+    sta command_get_filename, y
     // iny
     lda #$00  // null terminated
-    sta command_get_filename+3, y
+    sta command_get_filename+1, y
     tya
+    clc
     rts
 mfwe_unsupported_extension:
     sec

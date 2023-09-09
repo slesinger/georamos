@@ -96,6 +96,8 @@ command_dirfile:
 Filename will be appended to command_get_filename (max 16+.+3 chars) and total length will be updated as length = 15 + filename length
 Georam must be set to dir/file to respective table block
 A: filename with extension size
+$c3/$c4 start address where data to be stored
+$b9: flag on what address type to use
 return:
   $c1/$c2 start address where data were loaded
   $c3/$c4 end address
@@ -103,7 +105,7 @@ return:
 */
 network_get:
     clc
-    adc #18  // length of command start
+    adc #16  // length of command start
     sta command_get_size
     lda #$00
     sta command_get_size+1
@@ -122,50 +124,7 @@ command_get_size:
 .byte $21, $67, $65, $74, $2E, $70, $68, $70, $3F, $66, $3D
 //    !    g    e    t    .    p    h    p    ?    f    =
 command_get_filename:
-.fill 21, $20  // space for filename
-
-
-/* Use http GET tu upload memory content on server as query parameter.
-inputs:
-  A: filename with extension size
-  $c1/$c2 start address where payload data are in memory
-  command_put_payload_size: payload size. 4+11bytes for command and (19) bytes for filename is added in this routine
-return:
-  $c3/$c4 payload size sent to server
-*/
-network_put:
-    clc 
-    adc #21  // filename length + length of command start
-    adc command_put_payload_size
-    sta command_get_size
-    lda #$00
-    adc command_put_payload_size +1
-    bcs np_payload_oversize
-    sta command_get_size+1
-    //add payload size once more becayse payload get converted to base16
-    lda command_get_size
-    clc
-    adc command_put_payload_size
-    sta command_get_size
-    lda command_get_size+1
-    adc command_put_payload_size +1
-    bcs np_payload_oversize
-    sta command_get_size+1
-
-    lda #<command_get
-    sta $fe
-    lda #>command_get
-    sta $ff
-    jsr network_send_command_with_payload
-    rts
-np_payload_oversize:
-    lda #$08
-    sta status_code
-    sec
-    jsr status_print
-    clc
-    rts
-command_put_payload_size: .word $0000
+.fill 26, $20  // space for filename
 
 
 /*  Execute command without need to fetch response
@@ -205,12 +164,83 @@ net_lead:
     rts
 
 
-/* Send payload from memory to server. Call only after network_send_command.
+/* Use http GET tu upload memory content on server as query parameter.
+inputs:
+  A: filename with extension size
+  $f8/$f9 start address where payload data are in memory
+  command_put_payload_size: payload size. 4+11bytes for command and (19) bytes for filename is added in this routine
+return:
+  $c3/$c4 payload size sent to server
+*/
+network_put:
+    clc 
+    adc #19  // filename length + length of command start
+    sta napts_filename_size
+    sta command_get_size
+
+    lda #$00  // reset sent out bytes counter
+    sta fs_upload_size_uploaded
+    sta fs_upload_size_uploaded +1
+    lda #<command_get
+    sta $fe
+    lda #>command_get
+    sta $ff
+
+    lda #$70  // put "p" as payload in the &p=
+    sta nscwp_p +1
+    lda #$00  // assume first chunk will be $0100 bytes long
+    sta nscwp_len +1
+    sta $b9
+    lda #$02     // $100 bytes converted to base16AP
+    sta command_get_size+1
+    lda #<status_line
+    sta $c3
+    lda #>status_line
+    sta $c4
+np_next_chunk:
+    lda command_put_payload_size +1
+    cmp #$00
+    // bne !+  // if more than $100 bytes left
+    // bit command_put_payload_size
+    // bpl np_last  // if only < $80 bytes left because each byte converts to two base16AP bytes
+    beq np_last
+    jsr network_send_command_with_payload
+    lda #$61  // put "a" as append payload in the &p=
+    sta nscwp_p +1
+    dec command_put_payload_size +1
+    inc $f9  // move to next memory page
+    inc fs_upload_size_uploaded +1  // account for bytes sent
+    jmp np_next_chunk
+np_last:
+    lda command_put_payload_size
+    sta nscwp_len +1  // set looping constraint, actual, not doubled
+    asl command_put_payload_size  // double the size in place
+    lda #$00
+    adc command_put_payload_size +1  // 0 or add carry to 1
+    sta command_put_payload_size +1
+    lda napts_filename_size
+    clc
+    adc command_put_payload_size
+    sta command_get_size
+    lda #$00
+    adc command_put_payload_size +1
+    sta command_get_size +1
+    jsr network_send_command_with_payload
+    clc
+    adc fs_upload_size_uploaded  // account for bytes sent
+    sta fs_upload_size_uploaded
+    rts
+command_put_payload_size: .word $0000
+
+
+/* Send payload from memory to server. This can send payload max $100 bytes at once.
 input:
-    $c1/$c2 vector to payload
+    napts_filename_size: filename with extension size
+    $fe/$ff command "get" to send
+    $f8/$f9 vector to payload
     command_put_payload_size: payload size
 return:
-    $c3/$c4 payload size sent to server
+    A: payload size sent to server
 */
 network_send_command_with_payload:
     jsr net_lead
@@ -226,40 +256,24 @@ nscwp_nextchar:
     jmp nscwp_nextchar
 
 nscwp_payload_upload:
-    lda #$00  // reset sent out bytes counter
-    sta $c3
-    sta $c4
     lda #$26  // &p=  
     jsr write_byte
+nscwp_p:
     lda #$70
     jsr write_byte
     lda #$3d
     jsr write_byte
-
     ldy #$00
-    lda command_put_payload_size +1  // low nibble
-    cmp #$00
-    beq napts_last  // if only < $ff bytes left
-    ldy #$00
-!:  lda ($c1),y
+!:  lda ($f8),y
     jsr write_byte_base16
     iny
+nscwp_len:
+    cpy #$ff
     bne !-
-    inc $c2  // move to next memory page
-    inc $c4  // increase nytes sent size by $100
-    dec command_put_payload_size +1  // hi nibble
-    beq napts_last 
-    jmp !-
-napts_last:
-!:  lda ($c1),y
-    jsr write_byte_base16
-    inc $c3  // increase nytes sent size by $01
-    iny
-    cpy command_put_payload_size
-    bne !-
+    tya  // for accounting
     clc
     rts
-
+napts_filename_size: .byte $00
 
 /* Common start of reading a response from server
 return:
@@ -328,14 +342,23 @@ ng_netinitok:
     sbc #$00
     sta $fb
 
-    jsr read_byte
-    sta $fc  // target memory address
-    jsr read_byte
-    sta $fd
     lda $b9  // Sekundäradresse holen
     cmp #$00
     bne nga_loadtogeoram
-    lda $c3  // $b9 == 0 then take target address from $c3/c4 as kernal does it
+    lda fs_net_download_filetype  // check if file type is PRG and waste two bytes
+    cmp #$80
+    bne !+
+    jsr read_byte
+    jsr read_byte
+    // subtract 2 from length, too
+    lda $fa
+    sec
+    sbc #$02
+    sta $fa
+    lda $fb
+    sbc #$00
+    sta $fb
+!:  lda $c3  // $b9 == 0 then take target address from $c3/c4 as kernal does it
     sta $c1
     sta $fc
     lda $c4
@@ -353,6 +376,10 @@ nga_loadtogeoram:
     jsr startload_to_geo_seq
     jmp load_finished
 nga_loadtoaddress:
+    jsr read_byte
+    sta $fc  // target memory address
+    jsr read_byte
+    sta $fd
     lda $fc  // $b9 >= 2 then take address from network
     sta $c3
     sta $c1  // Load adress start C1 bzw. Ende C3
@@ -468,6 +495,45 @@ write_byte_base16:
     adc #$41  // move to A to range $41-$50  (ascii A-P)
     jsr write_byte
     rts
+
+/* Similar is write_byte_base16 but it will convert A byte to base16AP and
+output as A and X.
+input: A byte
+return:
+    A: low nibble converted to base16AP
+    X: high nibble converted to base16AP
+*/
+byte2base16ap:
+    pha
+    and #%00001111  // take low 4 bits only
+    clc
+    adc #$41  // move to A to range $41-$50  (ascii A-P)
+    tax
+    pla
+    lsr  // take high 4 bits only
+    lsr
+    lsr
+    lsr
+    clc
+    adc #$41  // move to A to range $41-$50  (ascii A-P)
+    rts
+
+
+/* Convert first letter of PRG or SEQ from input field
+input: A: first letter of PRG or SEQ
+return: A: b10xxxxxxxx file PRG
+        A: b11xxxxxxxx file SEQ
+*/
+screen2filetype:
+    ldy #$00
+    lda ($fb), y
+    cmp #$53  // S
+    bne !+
+    lda #%11000000  // SEQ
+    rts
+!:  lda #%10000000  // PRG
+    rts
+
 
 /* Receive byte from network
 return: A byte

@@ -243,7 +243,7 @@ ps2:lda ($fb), y
     lda status_data2
     jsr byte_to_hex_string
     txa    
-ps1:sta $0798
+ps1:sta status_line
     inc ps1 + 1
     iny
     jmp ps2
@@ -294,7 +294,7 @@ status_msg04: .text @"last address $\$1e\$1f<>"; .byte 0
 status_msg05: .text "cancelled"; .byte 0
 status_msg06: .text "error"; .byte 0
 status_msg07: .text "ok"; .byte 0
-status_msg08: .text "payload too big"; .byte 0
+status_msg08: .text "REUSE ME"; .byte 0
 
 
 /* Remove any text from status line (line 24)
