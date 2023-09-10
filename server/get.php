@@ -26,15 +26,19 @@ if (isset($_GET['p'])) {
     }
     fwrite($fp, pack('C*', ...base16AP2bytes($payload)));
     fclose($fp);
-    header('Content-Type: text/plain');
+    header('Content-Type: application/octet-stream');
+    $op_id = $payload[0];
+    print(chr(0x98) . chr(0x07) . chr(0x0f) . chr(0x0b) . chr(0x20) . $op_id);
 }
 else if (isset($_GET['a'])) {
-    $append_payload = strtolower($_GET['a']);
+    $payload = strtolower($_GET['a']);
     // Append payload
     $fp = fopen(BASE_DIR . $fn, 'ab');
-    fwrite($fp, pack('C*', ...base16AP2bytes($append_payload)));
+    fwrite($fp, pack('C*', ...base16AP2bytes($payload)));
     fclose($fp);
-    header('Content-Type: text/plain');
+    header('Content-Type: application/octet-stream');
+    $op_id = $payload[0];
+    print(chr(0x98) . chr(0x07) . chr(0x0f) . chr(0x0b) . chr(0x20) . $op_id);
 }
 else {
     // Download file

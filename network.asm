@@ -190,6 +190,7 @@ network_put:
     sta nscwp_p +1
     lda #$00  // assume first chunk will be $0100 bytes long
     sta nscwp_len +1
+    lda #$02
     sta $b9
     lda #$02     // $100 bytes converted to base16AP
     sta command_get_size+1
@@ -205,6 +206,7 @@ np_next_chunk:
     // bpl np_last  // if only < $80 bytes left because each byte converts to two base16AP bytes
     beq np_last
     jsr network_send_command_with_payload
+    jsr network_getanswer
     lda #$61  // put "a" as append payload in the &p=
     sta nscwp_p +1
     dec command_put_payload_size +1
@@ -226,6 +228,7 @@ np_last:
     adc command_put_payload_size +1
     sta command_get_size +1
     jsr network_send_command_with_payload
+    jsr network_getanswer
     clc
     adc fs_upload_size_uploaded  // account for bytes sent
     sta fs_upload_size_uploaded

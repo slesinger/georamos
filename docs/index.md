@@ -91,21 +91,6 @@ the ` key should give you a left-arrow.
 
 
 # TODO
-O reload net
-P prg up net uploadovalo se 2050B misto 4097B (3fff.prg)
-P seq up net uploadovalo se 2048B 
-O prg up net short
-O seq up net short 
-O prg up geo
-O seq up geo
-O prg dn net
-O seq dn net
-O prg dn geo
-O seq dn geo
-O prg ex net
-O prg ex geo
-
-- test geo/net up/download on hw
 - po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
 - footer for network backend
 - redraw panel after refresh and upload
