@@ -464,6 +464,7 @@ A: byte
 return: -
 */
 write_byte:
+pha  // for debug
     sta $dd01   // Bit 0..7: Userport Daten PB 0-7 schreiben
 dowrite:
     lda $dd0d
@@ -473,7 +474,24 @@ dowrite:
     nop
     and #$10        // Warten auf NMI FLAG2 = Byte wurde gelesen vom ESP
     beq dowrite
+pla  // for debug
+jsr write_byte_debug  // for debug
     rts
+
+// This is debug version of the above
+write_byte_debug:
+wbd:
+    sta $5000  // default starting address of log
+    lda #$01
+    clc
+    adc wbd +1
+    sta wbd +1
+    lda #$00
+    adc wbd +2
+    sta wbd +2
+    rts
+
+
 
 /* Same as write byte. It will convert byte to base16 and send it to network.
 Example: "A" $01 will be converted to two bytes "01" and then to "AB" and sent to network

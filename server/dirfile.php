@@ -22,7 +22,6 @@ sort($dirArray);
 $parent_directory_id = 0;
 
 header('Content-Type: application/octet-stream');
-print(chr(0x00) . chr(0x00));  // each download must prepend target memory address. here it is faked to $0000
 
 $current_entry_idx = 0;
 $current_block_idx = 0;
