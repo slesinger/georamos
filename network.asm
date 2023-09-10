@@ -467,7 +467,7 @@ A: byte
 return: -
 */
 write_byte:
-pha  // for debug
+// pha  // for debug
     sta $dd01   // Bit 0..7: Userport Daten PB 0-7 schreiben
 dowrite:
     lda $dd0d
@@ -477,8 +477,8 @@ dowrite:
     nop
     and #$10        // Warten auf NMI FLAG2 = Byte wurde gelesen vom ESP
     beq dowrite
-pla  // for debug
-jsr write_byte_debug  // for debug
+// pla  // for debug
+// jsr write_byte_debug  // for debug
     rts
 
 // This is debug version of the above

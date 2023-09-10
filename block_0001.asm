@@ -163,7 +163,10 @@ network_get_ok:
     bne !+
     jmp run_basic
     rts  // there is no return to georamos from executed program
-!:  jmp run_prg
+!:  
+    jsr CLRSCR  // clear screen
+    jsr run_prg
+    jsr menu_screen_init
 shi_end:
     rts
 

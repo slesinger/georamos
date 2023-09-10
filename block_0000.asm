@@ -134,9 +134,16 @@ run_prg:
     lda #$37
     sta $01
     cli
-    jsr $a659  // reset execute pointer and do CLR
-    jsr CLRSCR  // clear screen
-    jmp ($00c1)  // run non-basic program
+    // jsr $a659  // reset execute pointer and do CLR
+    lda $c1
+    sta rp_jsr +1
+    lda $c2
+    sta rp_jsr +2
+rp_jsr:
+    jsr $ffff
+    dec $01
+    // jmp ($00c1)  // run non-basic program
+    rts
 
 
 // Global variables

@@ -77,10 +77,10 @@ The lower left Control key should be the C= key.
 the ` key should give you a left-arrow.
 
 # Use cases
-- use C64 quick and smooth
+- use C64 quick and smooth, avoid floppy shuffling and wait times
 - exchange data C64<>pc with ease
 - develop on pc and run on real hw
-- main features are: ... finsh them
+- main features are: ... finish them
 - netlets - geoterm providing UI from PHP, allow "links" to download and execute code on c64 while being in geoterm mode (applets)
 - applets
 - browse web
@@ -91,11 +91,10 @@ the ` key should give you a left-arrow.
 
 
 # TODO
+- freeze when executing prg > ~10000B from net
 - po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
 - footer for network backend
 - redraw panel after refresh and upload
-- for panel content also reset d800 color memory
-- seq files - they just do not have first two bytes original load address as PRG do.
 - cd to directories
 - cd to D64 like a directory
 - header for network backend

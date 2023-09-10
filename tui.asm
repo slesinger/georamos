@@ -5,6 +5,10 @@
 #import "tui-panel.asm"
 
 menu_screen_init:
+    jsr CLRSCR  // clear screen
+    lda #$00
+    tax
+    jsr georam_set
 	// set to 25 line extended color text mode and turn on the screen
 	lda #$5B
 	sta $D011
