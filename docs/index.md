@@ -94,7 +94,6 @@ the ` key should give you a left-arrow.
 - freeze when executing prg > ~10000B from net
 - po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
 - footer for network backend
-- redraw panel after refresh and upload
 - cd to directories
 - cd to D64 like a directory
 - header for network backend
@@ -104,7 +103,7 @@ the ` key should give you a left-arrow.
 - make common meta loader (like load_x_state_meta_vector) for non-inputs e.g. input_line_dnld_meta
 - go over TODO in code
 
-- convenient function to fill memory 0800-9fff with 00
+- convenient function to fill memory 0800-9fff with 00 in CMD menu
 - backend for disk
 - floppy disk directory
 - copy georam to network

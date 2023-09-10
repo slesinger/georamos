@@ -7,3 +7,6 @@ An Applet can use full screen resources, sprites, sound, anything, it is just re
 When an applet is executed, it will always redownload its code from georam. It can, and it is advised, to store its state data in a seq file in georam.
 
 Start address to execute applet must be the start of the code.
+
+Applet can be executed separately. It may depend on functions from Georamos and may source data from georam.
+

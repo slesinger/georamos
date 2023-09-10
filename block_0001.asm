@@ -72,7 +72,7 @@ create_dir:
 
 delete_file:
     inc $d021
-    jsr firmware_upload  // !!!!!!!!!!!!!!!!!!!!!!!!! This is temporary
+    jsr delete_file_impl
     jmp read_key
 
 menu_drop:
@@ -84,6 +84,8 @@ exit_to_basic:
 
 reload_panel:
     jsr reload_panel_impl
+    ldx current_state
+    jsr panel_content_render
     jmp read_key
 
 arrow_up_handler:
@@ -242,6 +244,9 @@ ufmi_ok:
     sta status_code
     clc
     jsr status_print
+    jsr reload_panel_impl
+    ldx current_state
+    jsr panel_content_render
 ufmi_end:
     rts
 
@@ -328,6 +333,11 @@ cfmi_end:
     // jsr status_print  // input line disappears to acknowledge done
     rts
 
+delete_file_impl:
+    jsr reload_panel_impl
+    ldx current_state
+    jsr panel_content_render
+    rts
 
 // Main GeoRAMOS initialization
 // X: <preserved>
