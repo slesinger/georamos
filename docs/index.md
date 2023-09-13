@@ -93,6 +93,7 @@ the ` key should give you a left-arrow.
 # TODO
 - freeze when executing prg > ~10000B from net
 - po net uploadu pak hned nejde udelat reload dir. asi se znicil command get
+- po reloa dir nejde udelat execute
 - footer for network backend
 - cd to directories
 - cd to D64 like a directory

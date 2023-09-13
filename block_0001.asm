@@ -6,6 +6,7 @@
     jsr menu_screen_init  // all registers destroyed
     #if NETWORK
         jsr network_init
+        jsr network_get_time
     #endif
 
 // TODO to scan CONTROL, see https://skoolkid.github.io/sk6502/c64rom/asm/EA87.html

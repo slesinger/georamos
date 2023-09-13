@@ -31,26 +31,6 @@ mmba_b: .byte $00
 mmba_result: .byte $00, $00
 
 
-/* byte to decimal string
-A: input byte
-return:
-    a: high character (left)
-    x: low character (right)
-*/
-byte_to_hex_string:
-    pha
-    and #%00001111
-    jsr int2petscii  // low
-    tax
-    pla
-    lsr
-    lsr
-    lsr
-    lsr
-    jsr int2petscii  // high
-    rts
-
-
 /* convert A from petscii format used in georam file to Extended 
    Background Color format used in screen memory - first quater (blue bkg)
    See http://petscii.krissz.hu and load screens/menu.pe
@@ -92,23 +72,6 @@ petscii2int:
 !:  pla
     sec
     sbc #$37  // shift $41-$46 > $0a-$f
-    rts
-
-
-/* Usefull when converting int $0-$f to hex encoded petsci char. 
-A: int
-return: 
-  A: petscii character
-*/
-int2petscii:
-    cmp #$0a
-    bcc i2p_num  // branch if < $0a, then A is a number
-    sec
-    sbc #$09  // shift $0a-$f > $01-$06
-    rts
-i2p_num:
-    clc
-    adc #$30  // shift $00-$09 > $30-$39
     rts
 
 
