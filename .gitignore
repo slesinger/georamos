@@ -7,3 +7,4 @@
 georamos
 server/netdisk/**
 .venv
+**/__pycache__
