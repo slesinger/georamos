@@ -4,14 +4,14 @@ require_once('ncurses/screen.php');
 
 
 class Application {
-    private static $screen;
-    private static $widgets = array();
+    private $screen;
+    private $widgets = array();
 
     function __construct() {
         $this->screen = new Screen();
     }
 
-    static function add($widget) {
+    function add($widget) {
         array_push($this->widgets, $widget);
     }
 

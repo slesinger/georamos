@@ -64,9 +64,12 @@ growser_polling_trigger_flag: .byte 0
 If growser_polling_trigger_flag if non-zero, it gets called from keyboard loop.
 */
 command_growser_poll:
-.byte W, 4+13, 0, $01
-.byte  $21, $70, $6f, $6c, $6c, $2E, $70, $68, $70, $3F, $71, $3D
-//     !    p    o    l    l    .    p    h    p    ?    q    =
+// .byte W, 4+13, 0, $01
+// .byte  $21, $70, $6f, $6c, $6c, $2E, $70, $68, $70, $3F, $71, $3D
+// //     !    p    o    l    l    .    p    h    p    ?    q    =
+.byte W, 4+9, 0, $01
+.byte  $21, $70, $6f, $6c, $6c, $3F, $71, $3D
+//     !    p    o    l    l    ?    q    =
 command_growser_poll_q:
 .byte $70
 
@@ -84,6 +87,50 @@ growser_handle_poll_response:
 ghpr_netinitok:
 ghpr_startloop:
     // dispatch incoming blocks
+.break
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+jsr read_byte
+
     jsr read_byte
     cmp #$08
     beq gdp_magic_ok

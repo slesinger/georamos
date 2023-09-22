@@ -17,10 +17,13 @@ network_init:
     rts
 // TODO make this configurable, see global variables
 command_default_server:
-.byte W, 27, 0, $08
-.byte $68, $74, $74, $70, $3A, $2F, $2F, $31, $39, $32, $2E, $31, $36, $38, $2E, $31, $2E, $32, $2F, $67, $65, $6F, $2F
-//    h    t    t    p    :    /    /    1    9    2    .    1    6    8    .    1    .    2    /    g    e    o    /   
-// .text "http://C64.DOMA/GEO/"
+.byte W, 20, 0, $08
+.byte $68, $74, $74, $70, $3A, $2F, $2F, $63, $36, $34, $2E, $64, $6f, $6d, $61, $2f
+//    h    t    t    p    :    /    /    c    6    4    .    d    o    m    a    /
+// .byte W, 28, 0, $08
+// .byte $68, $74, $74, $70, $3A, $2F, $2F, $31, $39, $32, $2E, $31, $36, $38, $2E, $31, $2E, $32, $3A, $36, $34, $36, $34, $2F
+// //    h    t    t    p    :    /    /    1    9    2    .    1    6    8    .    1    .    2    :    6    4    6    4    /
+// .text "http://C64.DOMA/"
  
 
 /*  Execute command without need to fetch response
@@ -72,6 +75,7 @@ network_getanswer_init:
     lda $dd00
     and #251  // PA2 auf LOW = ESP im Sendemodus
     sta $dd00
+.break
     jsr read_byte  // Dummy Byte - um IRQ im ESP anzuschubsen
     jsr read_byte
     sta $fb  // hi nibble of length of data

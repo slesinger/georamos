@@ -6,3 +6,4 @@
 *.prg
 georamos
 server/netdisk/**
+.venv

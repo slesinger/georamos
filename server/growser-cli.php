@@ -5,7 +5,7 @@ require_once('ncurses/label.php');
 require_once('ncurses/dialog.php');
 require_once('ncurses/button.php');
 
-$app = Application();
+$app = new Application();
 $movingLabel = new Label("Hello world!", 2, 1);
 $app->add($movingLabel);
 $dialog1 = new Dialog("Dialog", 10, 10, 21, 11);

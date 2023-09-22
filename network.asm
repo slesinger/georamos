@@ -67,9 +67,9 @@ lda #14
 sta $d020  //complete
     rts
 command_dirfile:
-.byte W, 4+12, 0, $01
-.byte  $21, $64, $69, $72, $66, $69, $6C, $65, $2E, $70, $68, $70
-//     !    d    i    r    f    i    l    e    .    p    h    p
+.byte W, 4+8, 0, $01
+.byte  $21, $64, $69, $72, $66, $69, $6C, $65
+//     !    d    i    r    f    i    l    e
  
 
 /* Download file from server.
@@ -99,10 +99,10 @@ network_get:
 command_get:
 .byte W
 command_get_size:
-.byte 4+11, 0
+.byte 4+7, 0
 .byte $01  // load http
-.byte $21, $67, $65, $74, $2E, $70, $68, $70, $3F, $66, $3D
-//    !    g    e    t    .    p    h    p    ?    f    =
+.byte $21, $67, $65, $74, $3F, $66, $3D
+//    !    g    e    t    ?    f    =
 command_get_filename:
 .fill 26, $20  // space for filename
 
