@@ -28,8 +28,12 @@ Payload is sent to server in chunks of 256bytes
 
 Resource: /ndir
 
-
 /del
+
+# Additional WiC64 Commands
+
+$30 Switch to Growser serial mode
+$31 Exit Growser serial mode
 
 # Notes
 

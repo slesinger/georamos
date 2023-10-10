@@ -1,0 +1,3 @@
+textual-dev==1.2.1
+cbmcodecs2==1.3
+multipledispatch==1.0.0

@@ -1,0 +1,14 @@
+Screen {
+    background: darkblue
+}
+
+#dirtree {
+    dock: left;
+    width: 22;
+    height: 100%;
+    color: white;
+}
+
+#code {
+    color: gray;
+}

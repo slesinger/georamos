@@ -1,0 +1,361 @@
+#import "pottendos_utils.asm"
+
+
+// dest: addr, len: scalar
+.macro uport_read_(dest, len) {
+    lda #<dest
+    ldy #>dest
+    sta parport.len
+    sta parport.buffer
+    sta parport.dest
+    sty parport.len + 1
+    sty parport.buffer + 1
+    sty parport.dest + 1
+
+    clc
+    adc #<len
+    sta parport.len
+    bcc !+
+    inc parport.len + 1
+!:
+    lda parport.len + 1
+    clc
+    adc #>len
+    sta parport.len + 1
+
+    lda #(parport.nread - parport.jm - 2)
+    sta parport.jm + 1          // modify operand of ISR branch
+    jsr parport.start_isr
+    lda parport.read_pending    // busy wait until read is completed
+    bne *-3
+}
+// dest: addr, len: addr
+.macro uport_read(dest, len)
+{
+    adc16(len, dest, parport.len)
+    poke16_(parport.buffer, dest)
+    lda #(parport.nread - parport.jm - 2)
+    sta parport.jm + 1          // modify operand of ISR branch to
+    jsr parport.start_isr       // launch interrupt driven read
+    lda parport.read_pending    // busy wait until read is completed
+    bne *-3
+}
+
+.macro uport_lread(dest)
+{
+//     poke8_(parport.rtail, 0)
+//     lda #(parport.loopread - parport.jm - 2)
+//     sta parport.jm + 1  // modify jump address for loopread
+//     poke16_(parport.buffer, dest)
+//     jsr parport.start_isr
+}
+
+// dest: addr, len: addr
+.macro uport_sread(dest, len)
+{
+    adc16(len, dest, parport.len)
+    poke16_(parport.buffer, dest)   
+    jsr parport.sync_read
+}
+
+// dest: addr, lin in x-reg
+.macro uport_sread_f(dest)
+{
+    poke16_(parport._rf + 1, dest)   
+    jsr parport.sync_read_f
+}
+
+.macro uport_stop() {
+    jsr parport.stop_isr
+}
+
+// from: addr, len: scalar
+.macro uport_write_(from, len) {
+    poke16_(parport.buffer, from)
+    poke16_(parport.len, len)
+    jsr parport.write_buffer
+}
+
+// from: addr, len: addr
+.macro uport_write(from, len) {
+    poke16_(parport.buffer, from)
+    poke16(parport.len, len)
+    jsr parport.write_buffer
+}
+
+// from: addr (best to be page alinged ($100)), xreg: len
+.macro uport_write_f(from) {
+    poke16_(parport._wf+1, from)
+    jsr parport.write_buffer_f
+}
+
+// write byte from acc to parport
+.macro out_byte() {
+    pha
+    setbits(CIA2.PORTA, %00000100)    // set PA2 high
+    pla
+    sta CIA2.PORTB
+    clearbits(CIA2.PORTA, %11111011)    // set PA2 low
+!:  
+    lda #%10000     // check if receiver is ready to accept next char
+    bit CIA2.ICR
+    beq !-
+}
+
+// .segment _par_drv
+
+parport: {
+                .label buffer = $9e   // pointer to destination buffer
+len:            .word $0000     // len of requested read
+dest:           .word $0400     // destination address
+read_pending:   .byte $00       // flag if read is on-going
+rtail:          .byte $00
+pinput_pending: .byte $00       // #of msg the esp would like to send, inc'ed by NMI/Flag2
+_wtmp:          .byte $00
+init:
+    poke8_(read_pending, 0)
+    sta pinput_pending          // acc still 0
+
+    // enable SP2 as another digital output
+    poke16_(CIA2.TIA, $0001)        // load timer to enable shift
+    // clearbits(CIA2.CRA, %10101110)  // doesn't work, need to set full reg to 0; see next line
+    poke8_(CIA2.CRA, 0)             // needed that this works?!
+    setbits(CIA2.CRA, %01010001)    // shift->send, force load and enable timer in continous mode
+    // poke8_(CIA2.SDR, $ff)           // send %11111111, to start C64 in read mode
+    rts
+    
+// Interrupt driven read, finished when read_pending == 1
+start_isr:
+    poke8_(CIA2.ICR, $7f)            // stop all interrupts
+    poke16_(STD.NMI_VEC, flag_isr)   // reroute NMI
+    // poke8_(CIA2.SDR, $ff)            // Signal C64 is in read-mode (safe for CIA)
+    poke8_(CIA2.DIRB, $00)           // direction bit 0 -> input
+!    setbits(CIA2.DIRA, %00000100)    // PortA r/w for PA2
+    clearbits(CIA2.PORTA, %11111011) // set PA2 to low to signal we're ready to receive
+    lda CIA2.ICR                     // clear interrupt flags by reading
+    poke8_(CIA2.ICR, %10010000)      // enable FLAG pin as interrupt source
+    poke8_(read_pending, $01)
+    rts
+
+stop_isr:
+    poke8_(CIA2.ICR, $7f)            // stop all interrupts
+    poke16_(STD.NMI_VEC, STD.CONTNMI)    // reroute NMI
+    poke8_(CIA2.DIRB, $00)           // direction bits 0 -> input
+    poke8_(CIA2.ICR, $80)            // enable interrupts    
+    rts
+    
+flag_isr:
+    sei
+    save_regs()
+
+rb_doread:
+    lda CIA2.ICR
+    and #%00010000        // #$10 Warten auf NMI FLAG2 = Byte wurde gelesen vom ESP
+    beq rb_doread
+    inc $0401
+    // ldy #$00
+    lda CIA2.PORTB  // read chr from the parallel port B
+    sta $0500
+    // sta (buffer), y
+    // inc buffer      
+
+
+
+//     lda CIA2.ICR
+//     and #%00010000 // FLAG pin interrupt (bit 4)
+// jm: bne nread  // modified operand in case of loop read
+//     inc $0402
+//     jmp STD.CONTNMI
+    
+//     // receive char now
+// nread:
+//     inc $0401
+//     setbits(CIA2.PORTA, %00000100)  // set PA2 to high to signal we're busy receiving
+//     ldy #$00
+//     lda CIA2.PORTB  // read chr from the parallel port B
+//     sta (buffer), y
+//     inc buffer      
+    // bne !+
+    // inc buffer + 1
+!:
+out:
+    // clearbits(CIA2.PORTA, %11111011)   // clear PA2 to low to signal we're ready to receive
+    restore_regs()
+    rti
+
+
+
+loopread:
+    setbits(CIA2.PORTA, %00000100)  // set PA2 to high to signal we're busy receiving
+    lda CIA2.PORTB  // read chr from the parallel port B
+rt1:ldy rtail       // operand potentially modified to point to ccgms
+rt2:sta gl.dest_mem,y
+rt3:inc rtail       // operand potentially modified to point to ccgms
+    tya 
+    sec
+rt4:sbc $beef       // modified to point to ccgms
+    cmp #227         // 227
+    php
+    plp
+    bcc out         // enough room in buffer
+    //poke8_(VIC.BoC, RED)             // show wer're blocking
+    clearbits(CIA2.PORTA, %11111011) // clear PA2 to low to acknowledge last byte
+    ora #%00000100
+    sta CIA2.PORTA                   // set PA2 to high to signal we're busy -> FlowControl
+    restore_regs()
+    rti
+
+sync_read:
+    poke8_(CIA2.SDR, $ff)
+    poke8_(CIA2.DIRB, $00)          // direction bit 0 -> input
+    setbits(CIA2.DIRA, %00000100)   // PortA r/w for PA2
+    ldy #$00
+!next:
+    clearbits(CIA2.PORTA, %11111011)  // set PA2 to low to signal we're ready to receive bla
+!:  
+    lda CIA2.ICR
+    and #%00010000
+    beq !-
+    setbits(CIA2.PORTA, %00000100)  // set PA2 to high to signal we're busy
+    lda CIA2.PORTB
+    sta (buffer), y
+    inc buffer      
+    bne !+
+    inc buffer + 1
+!:
+    cmp16(buffer, len) 
+    bcc !next-
+    clearbits(CIA2.PORTA, %11111011)
+    rts
+
+// optimized sync read for small reads (<128 bytes)
+// dst address must be poked in _rf+1, x register holds len
+sync_read_f:
+    poke8_(CIA2.SDR, $ff)
+    poke8_(CIA2.DIRB, $00)          // direction bit 0 -> input
+    setbits(CIA2.DIRA, %00000100)   // PortA r/w for PA2
+    ldy #$00
+!nc_f:
+    clearbits(CIA2.PORTA, %11111011)  // set PA2 to low to signal we're ready to receive
+!:  
+    lda CIA2.ICR
+    and #%00010000
+    beq !-
+    setbits(CIA2.PORTA, %00000100)  // set PA2 to high to signal we're busy _f
+    lda CIA2.PORTB
+_rf:
+    sta $beef,y                     // operand modified
+    iny
+    dex
+    bne !nc_f-
+!:
+    clearbits(CIA2.PORTA, %11111011)
+    rts
+
+setup_write:
+    sei
+    uport_stop()                    // ensure that NMIs are not handled
+win:    
+    jsr $beef                       // operand modified, show W
+    poke8_(CIA2.SDR, 0)             // line -> low to tell C64 wants to write
+    poke8_(CIA2.DIRB, $ff)          // direction bits 1 -> output
+    setbits(CIA2.DIRA, %00000100)   // PortA r/w for PA2
+    setbits(CIA2.PORTA, %00000100)  // set PA2 to high
+    rts
+
+close_write:
+    clearbits(CIA2.PORTA, %11111011) // set PA2 low
+    poke8_(CIA2.DIRB, $00)           // set for input, to avoid conflict by mistake
+    poke8_(CIA2.SDR, $ff)            // send %11111111, to tell C64 finished writing
+wif:
+    jsr $beef                       // operand modified
+    cli
+    rts
+
+
+// lesser optimized, allowing up to 64k writes
+write_buffer:
+    // sanity check for len == 0
+    lda len + 1
+    bne cont
+    lda len
+    bne cont
+    rts
+cont:
+    jsr setup_write
+loop:    
+    ldy #$00
+    lda (buffer), y
+    out_byte()
+    inc buffer
+    bne !+
+    inc buffer + 1
+!:
+    dec len
+    bne loop
+    lda len + 1
+    beq done
+    dec len + 1
+    jmp loop
+done:
+    jsr close_write
+    rts
+
+// optimized write buffer for small packets (<128 bytes)
+// pointer to data needs to be poked in _wf+1, x register holds len
+write_buffer_f:
+    sei 
+    poke8_(CIA2.ICR, $7f)           // stop all interrupts
+    poke8_(CIA2.SDR, 0)             // line -> low to tell C64 wants to write
+    poke8_(CIA2.DIRB, $ff)          // direction bits 1 -> output
+    setbits(CIA2.DIRA, %00000100)   // PortA r/w for PA2
+    
+!n:
+    setbits(CIA2.PORTA, %00000100)   // set PA2 high
+_wf:
+    lda $beef                        // operand modified
+    sta CIA2.PORTB
+    clearbits(CIA2.PORTA, %11111011) // set PA2 low
+!:  
+    lda #%10000     // check if receiver is ready to accept next char
+    bit CIA2.ICR
+    beq !-
+    inc _wf+1                        // advance read address
+    dex
+    bne !n-
+
+    poke8_(CIA2.DIRB, $00)           // set for input, to avoid conflict by mistake
+    poke8_(CIA2.SDR, $ff)            // send %11111111, to tell C64 finished writing
+    cli
+    rts
+
+write_byte:
+    sta _wtmp       // save char to write
+    jsr setup_write
+    lda _wtmp
+    out_byte()
+    jsr close_write
+    rts
+
+arm_msgcnt:
+    poke8_(CIA2.ICR, $7f)           // stop all interrupts
+    poke16_(STD.NMI_VEC, msg_cnt)   // reroute NMI
+    //clearbits(CIA2.PORTA, %11111011) // clear PA2 to low to allow sync for write
+    setbits(CIA2.PORTA, %00000100)  // set PA2 to high to signal we're waiting for sync
+    lda CIA2.ICR                     // clear interrupt flags by reading
+    poke8_(CIA2.ICR, %10010000)      // enable FLAG pin as interrupt source
+    rts
+msg_cnt:
+    save_regs()
+    lda CIA2.ICR
+    and #%10000 // FLAG pin interrupt (bit 4)
+    bne !+
+    jmp STD.NMI   
+!:  inc pinput_pending
+    restore_regs()
+    rti
+
+}
+
+    
+__END__:    nop

@@ -8,3 +8,5 @@ georamos
 server/netdisk/**
 .venv
 **/__pycache__
+server/ansi.bin
+server/dump.bin

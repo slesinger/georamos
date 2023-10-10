@@ -114,10 +114,11 @@ write_byte:
     sta $dd01   // Bit 0..7: Userport Daten PB 0-7 schreiben
 dowrite:
     lda $dd0d
-    nop
-    nop
-    nop
-    nop
+    inc $0408
+    // nop
+    // nop
+    // nop
+    // nop
     and #$10        // Warten auf NMI FLAG2 = Byte wurde gelesen vom ESP
     beq dowrite
 // pla  // for debug
@@ -144,14 +145,31 @@ return: A byte
 read_byte:
 rb_doread:
     lda $dd0d
-    nop
-    nop
-    nop
-    nop
-    and #$10        // Warten auf NMI FLAG2 = Byte wurde gelesen vom ESP
+    inc $0406
+    // nop
+    // nop
+    // nop
+    // nop
+    and #%00010000        // #$10 Waiting for NMI FLAG2 = Byte was read from ESP
     beq rb_doread
     lda $dd01
     rts
 
+read_byteX:
+    ldx rb_ptr
+    lda $4000,x
+    inc rb_ptr
+    rts
+rb_ptr: .byte 0
+
+*=$4000
+.byte $08, $01, $21, $d0, $03
+.byte $08, $01, $21, $d0, $04
+.byte $08, $01, $21, $d0, $05
+.byte $08, $00
 
 
+// ABCDEFGHIJKLMNOPQRSTUVWXYZ
+// ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOP
+// ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQ
+// ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ
