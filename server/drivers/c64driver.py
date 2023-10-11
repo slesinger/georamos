@@ -206,18 +206,56 @@ class C64():
         self.color[self.cursor.x][self.cursor.y] = self.cursor.textColor
         self.cursor.nextPos()
 
-    def fromC64(self, b: int) -> str:
-        try:
-            enc = codecs.lookup("screencode_c64_lc")
-            ch = enc.decode(b.to_bytes(1, 'big'), errors='strict')[0][0] # type: ignore
-            return ch
-        except ValueError as e:
-            print(f"Decode error of {b}", file=sys.__stdout__)
-            return '?'
-
-
-
-
+    def fromC64(self, b: int) -> tuple[str, str | None]:
+        # https://sta.c64.org/cbm64petkey.html
+        printables: dict[int, str] = {
+            0x5c: '£', # POUND SIGN
+            0x5e: '^', # CIRCUMFLEX ACCENT
+        }
+        # for list of available values see this link but there are more: from textual.keys import _get_key_aliases
+        functional: dict[int, str] = {
+            0x03: 'escape',   # STOP
+            0x06: 'shift+tab',# CTRL + left arrow
+            0x0d: 'enter',    # RETURN
+            0x11: 'down',     # cursor down
+            0x13: 'home',     # HOME
+            0x14: 'delete',   # DELETE
+            0x1d: 'right',    # cursor right
+            0x5f: 'tab',      # left arrow
+            0x83: 'shift+escape',# SHIFT + RUN/STOP
+            0x85: 'f1',       # F1
+            0x86: 'f3',       # F3
+            0x87: 'f5',       # F5
+            0x88: 'f7',       # F7
+            0x89: 'f2',       # F2
+            0x8a: 'f4',       # F4
+            0x8b: 'f6',       # F6
+            0x8c: 'f8',       # F8
+            0x8d: 'shift+return', # SHIFT + F1
+            0x91: 'up',       # cursor up
+            0x93: 'end',      # SHIFT + CLR/HOME
+            0x94: 'insert',   # SHIFT + INST/DEL
+            0x9d: 'left',     # cursor left
+        }
+        #https://style64.org/petscii/
+        gfx: dict[int, str] = {
+            0x7b: '┼', # BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL
+            0xc0: '─', # BOX DRAWINGS LIGHT HORIZONTAL
+            0xdc: '', # LEFT HALF BLOCK MEDIUM SHADE (CUS)
+        }
+        if ch := printables.get(b, None):
+            return ch, ch
+        if ch := functional.get(b, None):
+            return ch, None
+        if 0x20 <= b <= 0x40: # numbers and symbols
+            return chr(b), chr(b)
+        if 0x41 <= b <= 0x5d: # letters
+            return chr(b).lower(), chr(b).lower()
+        if 0xc1 <= b <= 0xda: # shift letters
+            return chr(b-0x80), chr(b-0x80)
+        
+        print(f"Decode error of {hex(b)} which is chr {chr(b)}", file=sys.__stdout__)
+        return '?', None
 
 
 
@@ -257,8 +295,14 @@ class C64Driver(Driver):
         while not self.exit_event.is_set():
             serial_input = self.c64.ser.read(100)
             for i in serial_input:
-                ch = self.c64.fromC64(i)
-                key_event = Key(ch, ch)
+                # if True:
+                    # keys = ANSI_SEQUENCES_KEYS.get('\x1b[B')
+                    # _sequence_to_key_events
+                    # key_event = Key('down', None)
+                    # self.process_event(key_event)
+                    # continue
+                key, char = self.c64.fromC64(i)
+                key_event = Key(key, char)
                 self.process_event(key_event)
 
 
@@ -323,7 +367,7 @@ class C64Driver(Driver):
 
     def flush(self) -> None:
         """Flush any buffered data."""
-        print("flushing now")
+        print("flushuji now")
 
 
     def start_application_mode(self) -> None:

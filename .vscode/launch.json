@@ -4,6 +4,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
+            "cwd": "${workspaceFolder}/server",
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false
