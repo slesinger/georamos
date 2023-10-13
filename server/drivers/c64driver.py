@@ -13,6 +13,10 @@ from threading import Thread
 if TYPE_CHECKING:
     from textual.app import App
 
+BAUD_SPEED = 115200 #250000  250000 is not reliable, some bytes are missing
+TO_C64_ESC = 0x9f # escape commands when sending screen difs to C64
+TO_C64_HOME = 0x01  # set cursor to (0,0)
+
 class C64Color():
     """
     c64  name  idx
@@ -121,9 +125,9 @@ class C64():
         self.cursor = C64Cursor()
         self.clear()
         self.screen_backbuffer = [ [0x20]*self.SCREEN_HEIGHT for i in range(self.SCREEN_WIDTH)]
-        self.ser = serial.Serial('/dev/ttyUSB0', 250000, timeout=0.02)
-        dump_timer = Timer(1.0, self.dumpser)
-        dump_timer.start()
+        self.ser = serial.Serial('/dev/ttyUSB0', BAUD_SPEED, timeout=0.02)
+        self.dump_timer = Timer(1.0, self.dumpser)
+        self.dump_timer.start()
 
     def clear(self):
         self.screen = [ [0x20]*self.SCREEN_HEIGHT for i in range(self.SCREEN_WIDTH)]
@@ -140,17 +144,19 @@ class C64():
         print("Dump finished", file=sys.__stdout__)
 
     def dumpser(self):
-        print("Dump Serial started", file=sys.__stdout__)
         bResponse = []
+        bResponse.append((TO_C64_ESC).to_bytes(1,'big'))
+        # bResponse.append((TO_C64_HOME).to_bytes(1,'big'))
         for sy in range(0, self.SCREEN_HEIGHT):
             for sx in range(0, self.SCREEN_WIDTH):
                 bResponse.append((self.screen[sx][sy]).to_bytes(1,'big'))
-        # self.ser.write(b"".join(bResponse))
-        self.ser.write(b"OK ")
+        self.ser.write(b"".join(bResponse))
         self.ser.flush()
         print("Dump Serial finished", file=sys.__stdout__)
         self.dump()
-        sys.exit(0)
+        self.dump_timer = Timer(5, self.dumpser)
+        self.dump_timer.start()
+# setbits(CIA2.PORTA, %00000100)  // set PA2 to high to signal we're busy receiving
 
     def executeAnsiCommand(self, params, cmd):
         p = params.split(';')
@@ -295,25 +301,19 @@ class C64Driver(Driver):
         while not self.exit_event.is_set():
             serial_input = self.c64.ser.read(100)
             for i in serial_input:
-                # if True:
-                    # keys = ANSI_SEQUENCES_KEYS.get('\x1b[B')
-                    # _sequence_to_key_events
-                    # key_event = Key('down', None)
-                    # self.process_event(key_event)
-                    # continue
                 key, char = self.c64.fromC64(i)
                 key_event = Key(key, char)
                 self.process_event(key_event)
 
 
     # @asyncio.coroutine
-    async def screen_diff_timer_callback(self):
-        while True:
-            print(f"cau", file=sys.__stdout__)
-            # await asyncio.sleep(1)
-            self.c64.dumpser()
-            time.sleep(1)
-            print(f"screen sent", file=sys.__stdout__)
+    # async def screen_diff_timer_callback(self):
+    #     while True:
+    #         print(f"cau", file=sys.__stdout__)
+    #         # await asyncio.sleep(1)
+    #         self.c64.dumpser()
+    #         time.sleep(2)
+    #         print(f"screen sent", file=sys.__stdout__)
 
 
     def write(self, data: str) -> None:
@@ -368,6 +368,8 @@ class C64Driver(Driver):
     def flush(self) -> None:
         """Flush any buffered data."""
         print("flushuji now")
+        # self.c64.dumpser()
+        # self.c64.dump()
 
 
     def start_application_mode(self) -> None:

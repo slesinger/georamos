@@ -29,11 +29,11 @@ f lightgray 252
 """
 
 TEXT = """\
-def hello(na:e)X
-    print("hellX
+def hello(na:e)x
+    print("hellx
 
-def goodbye(namX
-    print("goodX
+def goodbye(namx
+    print("goodx
 """
 
 
